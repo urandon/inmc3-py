@@ -1,6 +1,7 @@
 import numpy as np
 from enum import Enum
 
+import classifier, inspector
 
 class Struct:
     def __init__(self, **entries): 
@@ -114,16 +115,12 @@ class MaxCorrelationTrainer(object):
                              self.get_resulting_weights()))
     
     def log_func(self, idx, functional, single=False):
-        if single:
-            logger.push(best_functional_msg_template.\
-            format(MaxCorrelationInspector.single_functional_description,\
-            idx, best_functional))
-        else 
-            logger.push(best_functional_msg_template.\
-            format(MaxCorrelationInspector.complex_functional_description,\
-            idx, best_functional))
-    
-    
+        logger.push(best_functional_msg_template.\
+        format(MaxCorrelationInspector.single_functional_description if single else\
+               MaxCorrelationInspector.complex_functional_description,\
+               idx, best_functional))
+           
+        
     def train(self, sample, logger = self.logger): # sample is X, y tuple
         n_objects, n_features = sample.X.shape
         self.n_features = n_features
@@ -133,7 +130,7 @@ class MaxCorrelationTrainer(object):
         best_weights = None
 
         combinations = []
-        # use all the features w/o selection
+        # use all the features w/o selection        
         features = range(n_features)
                 
         self.best_functional = self.initial_single_functional
@@ -269,14 +266,3 @@ class MaxCorrelationTrainer(object):
                        deviation=deviation, var_result=var_result, var_C=var_C)
         
         return res, stats
-        
-    
-                                
-        
-                                
-        
-        
-       
-    
-    
-    
