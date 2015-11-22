@@ -1,25 +1,20 @@
 import numpy as np
 import functools
 
-
-def override(fun):
-    class MustOverrideException(Exception):
-        pass
-    
-    @functools.wraps(fun)
-    def wrapper(*args, **kwargs):
-        raise MustOverrideException
-    
-    return wrapper
+class Sample(object):
+    def __init__(X, y):
+        self.X = X
+        self.y = y
+        self.size, self.n_features = X.shape
 
 
 class Classifier(object):
     
     _epsilon = np.double(0.01)
     
-    def __init__(X, y, feature_subset, sample_subset):
-        self.X = X
-        self.y = y
+    def __init__(sample, feature_subset, sample_subset):
+        self.X = sample.X
+        self.y = sample.y
         self.feature_subset = feature_subset
         self.sample_subset = sample_subset
         
@@ -64,14 +59,21 @@ class Classifier(object):
         self.beta = (y - self.alpha * x) / self.n_samples
 
     def X_sub(self):
-        return self.X[self.sample_subset,:]
+        return self.X[self.sample_subset,:][:,self.feature_subset]
     
     def y_sub(self):
-        return self.y[self.sample_subset,:]
+        return self.y[self.sample_subset,:][:,self.feature_subset]
                     
     # precedent is a np.ndarray of size (samples,features) or (features,)
-    def classify_one(self, class_idx, precedent):
-        return self.alpha[class_idx] * precedent[class_idx] + self.beta[class_idx]
+    # classify using one feature per a time
+    # precedents bellow should be passed with tripped features by self.feature_subset
+    def classify_one(self, feature_idx, precedent):
+        if len(precedent.shape) == 1:
+            return self.alpha[feature_idx] * precedent[feature_idx] +\
+            self.beta[feature_idx]
+        else:
+            return self.alpha[feature_idx] * precedent[:,feature_idx] +\
+            self.beta[feature_idx]
     
     def classify(self, weights, precedent):
         return np.inner(weights, self.alpha * precedent + self.beta)
@@ -80,14 +82,17 @@ class Classifier(object):
     def _X_(self, object_idx): # get a subsubsample
         return self.X[[self.sample_subset[x] for x in object_idx ],:]
         
-    def classify_training_one(self, class_idx, object_idx):
-        return self.alpha[class_idx] * self._X_(object_idx) + self.beta[class_idx]
+    def classify_training_one(self, feature_idx, object_idx):
+        return self.alpha[feature_idx] * self._X_(object_idx)[:,feature_idx] +\
+        self.beta[feature_idx]
     
     def classify_training(self, weights, object_idx):
-        return np.inner(weights, self.alpha * self._X_(object_idx) + self.beta)
+        return np.inner(weights, self.alpha * self._X_(object_idx)[:,feature_idx] +\
+                        self.beta)
 
     def classify_training_all(self, weights):
-        return np.inner(weights, self.alpha * self.X[self.sample_subset,:] + self.beta)
+        return np.inner(weights, self.alpha *\
+                        self.X[self.sample_subset,:][:,feature_idx] + self.beta)
         
 
 class ComplexClassifier(object):
@@ -134,7 +139,7 @@ class ComplexClassifier(object):
         return self.clf.classify_training(self.weights, object_idx)
     
     def _raw_classify_training_all(self):
-        return self.clf.classify_trainint_all(self.weights)
+        return self.clf.classify_training_all(self.weights)
     
     def classify_training(self, object_idx):
         return self.alpha * _raw_classify_training(object_idx) + self.beta
@@ -143,5 +148,5 @@ class ComplexClassifier(object):
         return self.alpha * _raw_classify_training_all() + self.beta
         
     def classify(precedent):
-        return self.alpha * self.clf.classity(precedent) + self.beta
+        return self.alpha * self.clf.classify(precedent) + self.beta
     

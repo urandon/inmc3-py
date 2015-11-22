@@ -1,10 +1,12 @@
 import numpy as np
+import numpy.linalg
 
+import classifier
 
 class IInspectior(object):
     def error(i): pass
     def discrepancy(i, j): pass
-    def variance(i): pass    
+    def variance(i): pass
     def weight(i): pass
     def functional(): pass
     def check(): pass
@@ -14,9 +16,109 @@ class IInspectior(object):
     def __init__(weights, clf):
         self.weights = weights
         self.clf = clf
+
+class Inspector(object):
+    def __init__(self, sample, subset):
+        self.pearson = [None]
+        self.weights = [None]
+        self.functional = None
+        
+        self.sample = sample
+        self.feature_subset = subset
+        self.n_features = len(subset)
+        self.feature_mapping = {sub:idx for (idx, sub) in enumerate(subset)}
+        self.sample_subset = np.nonzero(~np.isnan(\
+            self.sample.X[:,feature_subset].any(axis=1)))                
+        self.sample_mapping = {sub:idx for (idx, sub) in enumerate(subset)}
+        self.n_samples = len(self.sample_subset)
+        
         
 
-class MaxCorrelationInspector(object):
+        # train totally
+        self.clf = classifier.Classifier(sample, self.feature_subset,\
+                                         self.sample_subset)
+        subC = sample.y[self.sample_subset]
+        values = self.clf.classify_one(range(self.feature_subset),\
+                 sample.X[self.sample_subset,:][:,self.feature_subset])
+        
+        # get stats
+        self.expecteds = values.mean(axis=0)
+        self.errors = np.square(values - subC).mean(axis=0)
+        self.variances = np.square(values-self.expecteds).mean(axis=0)
+        self.discrepancies = np.zeros((self.n_features, self.n_features))
+        #for i in xrange(self.n_features):
+        #    for j in xrange(i+1, self.n_features):
+        #        self.discrepancies[i,j] = np.square(values[i,:]-values[j,:]).sum()
+        tmp = np.square(values).sum(axis=0)[np.newaxis]
+        self.discrepancies = tmp + tmp.T - 2 * np.dot(values.T, values)
+        self.discrepancies /= (self.n_samples + 5)
+        
+        self.eC = np.nanmean(subC)
+        self.varC = np.nanstd(subC).mean() ** 2
+        self.pearson = np.zeros(self.n_features)
+        # pearson = [self.pearson(k, values) for in xrange(self.n_features)]
+        e1, e2 = self.expecteds = self.eC
+        v1, v2 = self.variances, self.varC
+        self.pearson = np.inner(values-e1, self.sample.y-e2) /\
+                       (self.n_samples * np.sqrt(v1 * v2))                
+
+    def get_expected_val(self, values):
+        return np.nanmean(values)
+    
+    def get_expected_f(self, feature):
+        return self.expecteds[feature]
+    
+    def get_w_expected(self, weights):
+        return clf.classify(self.sample.X).mean()
+    
+    def get_variance(self, feature):
+        return self.variances[feature]
+        
+    def get_variance(self, values):
+        return np.nanstd(values).mean() ** 2
+    
+    def pearson(self, feature, values):
+        # todo: checks
+        e1, e2 = self.get_expected_f(feature), self.eC
+        v1, v2 = self.get_variance(feature), self.varC
+        return np.inner(values[:,feature]-e1, self.sample.y-e2)\
+               /(self.n_samples * np.sqrt(v1 * v2))
+   
+    def check():
+        if len(self.feature_subset) > 1:
+            revrsd = np.linalg.inv(discrepancies.T)
+            check_ = self.subset_weights(revrsd)
+            if check_ is None: return False
+            self.weights, self.functional = check_
+            return True
+        else:
+            self.weights = np.array([1])
+            self.functional = pearson[0];
+            return True
+
+    def which_is_dominated_clf(self, cclf1, cclf2):
+        v1, v2 = clf1.variance, clf2.variance
+        rho = np.square(clf1.classify_training-clf2.classify_training).mean()
+        if (np.square(v1-v2) - rho * (v1+v2)) == 0:
+            return None # TODO: what to do?
+        c1 = (v2*v2 - v1*v2 - v2*rho) / (np.square(v1-v2) - rho*(v1+v2))
+        if c1 < 0:
+            return cl1
+        elif c1 > 1:
+            return cl2
+        return None
+        
+    def which_is_dominated_feature(feature1, feature2):
+        if self.discrepancies[feature1][feature2] <\
+        np.abs(self.errors[feature1], self.errors[feature2]):
+            return feature1 if self.errors[feature1] >\
+            self.errors[feature2] else feature2
+        else:
+            return None
+    
+
+    
+class MaxCorrelationInspector(Inspector):
     _epsilon = 1e-3
     single_functional_description = 'pearson'
     complex_functional_description = 'pearson'
@@ -98,7 +200,7 @@ class MaxCorrelationInspector(object):
             weights = best_theta * phi_ / cs + psi_ / cs
             if (weights <= self._epsilon).any(): return 0
             
-        return functional, weights
+        return weights, functional
     
     
     
