@@ -1,0 +1,35 @@
+Module: optmixes
+Submodules:
+    * classifier
+    * inspector
+    * trainer
+
+Submodule classifier:
+    logger classes
+    class MaxCorrelationTrainer
+
+Submodule inspector:
+    class MaxCorrelationInspector
+
+Submodule classifier:
+    class Classifier
+    class ComplexClassifier
+    
+----------------------------------
+
+HowTo work with sparce data:
+    pass sparsed sample.X with np.nan on omitted to trainer
+    trainer has build-in nan-filter
+    
+----------------------------------
+
+TODO:
+    inspector.py
+    |
+    V
+    varC = self.varC #  TODO: figure out what is varC
+    discrepancies = self.discrepancies #  TODO: figure out what is discrepancies
+    variances = self.variances #  TODO: figure out what is variances
+    
+class MaxCorrelationInspector is inhereted from Inspector,
+but Inspector realization is NA
