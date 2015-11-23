@@ -42,10 +42,12 @@ class Classifier(object):
         self.beta = (y - self.alpha * x) / self.n_samples
 
     def X_sub(self):
-        return self.X[self.sample_subset,:][:,self.feature_subset]
+        if len(self.feature_subset) == 1:
+            return self.X[self.sample_subset,:]
+        else: return self.X[self.sample_subset,:][:,self.feature_subset]
     
     def y_sub(self):
-        return self.y[self.sample_subset,:][:,self.feature_subset]
+        return self.y[self.sample_subset]
                     
     # precedent is a np.ndarray of size (samples,features) or (features,)
     # classify using one feature per a time
@@ -90,25 +92,28 @@ class ComplexClassifier(object):
             (np.double(0) for x in xrange(4))
         
         if classifier is not None:
-            self._set_classifier(classifier)        
+            self.set_classifier(classifier)        
 
     def set_classifier(self, cl):
         self.n_samples, self.n_features = cl.n_samples, cl.n_features
         self.alpha, self.beta = self._find_alpha_beta()
         
-        X_ = self.classify_training_all()
+        X_ = self._raw_classify_training_all()
         y_ = self.clf.y_sub()
         predicted = self.alpha * X_ + self.beta
+        
+        print 'y:{}\nclf:{}\ncclf:{}'.format(y_, X_, predicted)
         
         self.error = np.mean(np.square(predicted-y_))
         self.variance = np.var(predicted)
         
         
     def  _find_alpha_beta(self):
-        X_ = np.nan_to_num(self.clf.classify_training_all(self.weights))
+        X_ = self._raw_classify_training_all()
         y_ = self.clf.y_sub()
-        nonnan_cnt = y.size - np.count_nonzero(np.isnan(y_))
-        y_ = np.nan_to_num(y)
+        nonnan_cnt = y_.size - np.count_nonzero(np.isnan(y_))
+        if nonnan_cnt == 0: return self.alpha, self.beta
+        y_ = np.nan_to_num(y_)
 
         x = np.sum(X_, axis=0)
         xy = np.dot(y_, X_)
@@ -117,19 +122,19 @@ class ComplexClassifier(object):
         
         alpha = (xy - x*y / nonnan_cnt) / (x2 - x*x / nonnan_cnt)
         beta = (y - alpha * x) / nonnan_cnt
-        return alpha, beta                                
+        return alpha, beta
    
     def _raw_classify_training(self, object_idx):
         return self.clf.classify_training(self.weights, object_idx)
     
     def _raw_classify_training_all(self):
-        return self.clf.classify_training_all(self.weights)
+        return np.nan_to_num(self.clf.classify_training_all(self.weights))
     
     def classify_training(self, object_idx):
-        return self.alpha * _raw_classify_training(object_idx) + self.beta
+        return self.alpha * self._raw_classify_training(object_idx) + self.beta
 
     def classify_training_all(self):
-        return self.alpha * _raw_classify_training_all() + self.beta
+        return self.alpha * self._raw_classify_training_all() + self.beta
         
     def classify(self, precedent):
         return self.alpha * self.clf.classify(precedent) + self.beta
