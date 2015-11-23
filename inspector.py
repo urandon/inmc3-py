@@ -92,8 +92,8 @@ class Inspector(object):
             self.weights, self.functional = check_
             return True
         else:
-            self.weights = np.array([1])
-            self.functional = pearson[0];
+            self.weights = np.array([1])            
+            self.functional = self.pearson[0][0];
             return True
 
     def which_is_dominated_clf(self, cclf1, cclf2):

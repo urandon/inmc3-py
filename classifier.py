@@ -83,13 +83,15 @@ class Classifier(object):
 
 class ComplexClassifier(object):
     
-    def __init__(self, weights, multiplier = 1, classifier = None):
+    def __init__(self, weights, multiplier = 1, classifier = None, fidxs=None):
         self.weights = weights
         self.multiplier = multiplier
         self.clf = classifier
+        self.fidxs = fidxs
         self.n_samles, self.n_features = 0, 0
-        self.alpha, self.beta, self.variance, self.error =\
-            (np.double(0) for x in xrange(4))
+        self.alpha, self.beta, self.variance =\
+            (np.double(0) for x in xrange(3))
+        self.error = np.inf
         
         if classifier is not None:
             self.set_classifier(classifier)        
