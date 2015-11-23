@@ -2,7 +2,7 @@ import numpy as np
 import functools
 
 class Sample(object):
-    def __init__(X, y):
+    def __init__(self, X, y):
         self.X = X
         self.y = y
         self.size, self.n_features = X.shape
@@ -12,7 +12,7 @@ class Classifier(object):
     
     _epsilon = np.double(0.01)
     
-    def __init__(sample, feature_subset, sample_subset):
+    def __init__(self, sample, feature_subset, sample_subset):
         self.X = sample.X
         self.y = sample.y
         self.feature_subset = feature_subset
@@ -25,27 +25,10 @@ class Classifier(object):
         self.beta = np.zeros((self.n_features))
         
         if self.n_samples != 0:
-            self._find_linear_coefficients()
-        
-    def _find_linear_coefficients_deprecated():
-        y_ = self.y[self.sample_subset,:]
-        for idx, feature in enumerate(self.feature_subset):            
-            X_ = self.X[:,feature][self.sample_subset,:]            
-            
-            xy = np.inner(X_,y_)
-            x = np.sum(X_)
-            x2 = np.inner(X_, X_)
-            y = np.sum(y_)
-            
-            if np.abs(x2 - x*x / self.n_samples) > self._epsilon:
-                self.alpha[idx] = (xy - x*y/self.n_samples) / (x2 - x*x/self.n_samples)
-            else:
-                self.alpha[idx] = 0
-            
-            self.beta[idx] = (y - self.alpha[idx] * x) / self.n_samples
+            self._find_linear_coefficients()        
     
-    def _find_linear_coefficients():
-        y_ = np.nan_to_num(self.y[self.sample_subset,:])
+    def _find_linear_coefficients(self):
+        y_ = np.nan_to_num(self.y[self.sample_subset])
         X_ = np.nan_to_num(self.X[self.sample_subset,:][:,self.feature_subset])
         
         x = np.sum(X_, axis=0)
@@ -54,7 +37,7 @@ class Classifier(object):
         y = np.sum(y_)
         
         m = np.abs(x2 - x*x / self.n_samples) > self._epsilon
-        self.alpha[m] = (xy[m] - x[m]*y[m]/self.n_samples) /\
+        self.alpha[m] = (xy[m] - x[m]*y/self.n_samples) /\
             (x2[m] - np.square(x[m])/self.n_samples)
         self.beta = (y - self.alpha * x) / self.n_samples
 
@@ -79,20 +62,21 @@ class Classifier(object):
         return np.inner(weights, self.alpha * precedent + self.beta)
     
     # object_idx is an int or list
-    def _X_(self, object_idx): # get a subsubsample
-        return self.X[[self.sample_subset[x] for x in object_idx ],:]
+    def _X_(self, object_idxs): # get a subsubsample
+        return self.X[[self.sample_subset[x] for x in object_idxs],:]
         
-    def classify_training_one(self, feature_idx, object_idx):
-        return self.alpha[feature_idx] * self._X_(object_idx)[:,feature_idx] +\
+    def classify_training_one(self, feature_idx, object_idxs):
+        return self.alpha[feature_idx] * self._X_(object_idx)[:,feature_idxs] +\
         self.beta[feature_idx]
     
-    def classify_training(self, weights, object_idx):
-        return np.inner(weights, self.alpha * self._X_(object_idx)[:,feature_idx] +\
+    def classify_training(self, weights, object_idxs):
+        return np.inner(weights, self.alpha *\
+                        self._X_(object_idx)[:,self.feature_subset] +\
                         self.beta)
 
     def classify_training_all(self, weights):
         return np.inner(weights, self.alpha *\
-                        self.X[self.sample_subset,:][:,feature_idx] + self.beta)
+                        self.X[self.sample_subset,:][:,self.feature_subset] + self.beta)
         
 
 class ComplexClassifier(object):
@@ -147,6 +131,6 @@ class ComplexClassifier(object):
     def classify_training_all(self):
         return self.alpha * _raw_classify_training_all() + self.beta
         
-    def classify(precedent):
+    def classify(self, precedent):
         return self.alpha * self.clf.classify(precedent) + self.beta
     
