@@ -18,27 +18,27 @@ class IInspectior(object):
         self.clf = clf
 
 class Inspector(object):
-    def __init__(self, sample, subset):
+    def __init__(self, sample, feature_subset):
         self.pearson = [None]
         self.weights = [None]
         self.functional = None
         
         self.sample = sample
-        self.feature_subset = subset
-        self.n_features = len(subset)
-        self.feature_mapping = {sub:idx for (idx, sub) in enumerate(subset)}
+        self.feature_subset = feature_subset
+        self.n_features = len(feature_subset)
+        self.feature_mapping = {sub:idx for (idx, sub) in enumerate(feature_subset)}
         self.sample_subset = np.nonzero(~np.isnan(\
-            self.sample.X[:,feature_subset].any(axis=1)))                
-        self.sample_mapping = {sub:idx for (idx, sub) in enumerate(subset)}
+            self.sample.X[:,feature_subset].any(axis=1)))
+        if type(self.sample_subset) is tuple:
+            self.sample_subset = self.sample_subset[0]
+        self.sample_mapping = {sub:idx for (idx, sub) in enumerate(feature_subset)}
         self.n_samples = len(self.sample_subset)
-        
-        
 
         # train totally
         self.clf = classifier.Classifier(sample, self.feature_subset,\
                                          self.sample_subset)
-        subC = sample.y[self.sample_subset]
-        values = self.clf.classify_one(range(self.feature_subset),\
+        subC = sample.y[self.sample_subset][:,np.newaxis]
+        values = self.clf.classify_one(range(len(self.feature_subset)),\
                  sample.X[self.sample_subset,:][:,self.feature_subset])
         
         # get stats
@@ -57,10 +57,10 @@ class Inspector(object):
         self.varC = np.nanstd(subC).mean() ** 2
         self.pearson = np.zeros(self.n_features)
         # pearson = [self.pearson(k, values) for in xrange(self.n_features)]
-        e1, e2 = self.expecteds = self.eC
+        e1, e2 = self.expecteds[np.newaxis], self.eC
         v1, v2 = self.variances, self.varC
-        self.pearson = np.inner(values-e1, self.sample.y-e2) /\
-                       (self.n_samples * np.sqrt(v1 * v2))                
+        self.pearson = np.dot((self.sample.y-e2)[np.newaxis], values-e1) /\
+                       (self.n_samples * np.sqrt(v1 * v2))
 
     def get_expected_val(self, values):
         return np.nanmean(values)
@@ -84,9 +84,9 @@ class Inspector(object):
         return np.inner(values[:,feature]-e1, self.sample.y-e2)\
                /(self.n_samples * np.sqrt(v1 * v2))
    
-    def check():
+    def check(self):
         if len(self.feature_subset) > 1:
-            revrsd = np.linalg.inv(discrepancies.T)
+            revrsd = np.linalg.inv(self.discrepancies)
             check_ = self.subset_weights(revrsd)
             if check_ is None: return False
             self.weights, self.functional = check_
@@ -108,7 +108,7 @@ class Inspector(object):
             return cl2
         return None
         
-    def which_is_dominated_feature(feature1, feature2):
+    def which_is_dominated_feature(self, feature1, feature2):
         if self.discrepancies[feature1][feature2] <\
         np.abs(self.errors[feature1], self.errors[feature2]):
             return feature1 if self.errors[feature1] >\
@@ -124,19 +124,20 @@ class MaxCorrelationInspector(Inspector):
     complex_functional_description = 'pearson'
     
     def __init__(self, sample, feature_subset):
+        super(MaxCorrelationInspector, self).__init__(sample, feature_subset)        
         self.alpha, self.beta, self.gamma = [np.double() for x in xrange(3)]
         self.DE, self.DI = [], []
         self.cs = np.double()
         self.B0, self.B1, self.B2 = [np.double() for x in xrange(3)]        
         self.sample, self.subset = sample, feature_subset
         
-    def subset_weights(reversed_):
+    def subset_weights(self, reversed_):
         subsize = len(self.feature_subset)
         weights = [np.double() for x in xrange(subsize)]
         functional = None
-        varC = self.varC #  TODO: figure out what is varC
-        discrepancies = self.discrepancies #  TODO: figure out what is discrepancies
-        variances = self.variances #  TODO: figure out what is variances
+        varC = self.varC
+        discrepancies = self.discrepancies
+        variances = self.variances
         
         if subsize == 2:            
             v1, v2 = variances
@@ -150,27 +151,33 @@ class MaxCorrelationInspector(Inspector):
                 np.sqrt((c1 * (v1-v2) + v2 - c1 * (1-c1) * rho) * varC)
         else:
             #phi = lambda idx: beta * DI[i] - gamma * DE[i]
-            #psi = lambda idx: beta * DE[i] - alpha * DI[i]
-            
+            #psi = lambda idx: beta * DE[i] - alpha * DI[i]           
             DI = np.sum(reversed_, axis = 1)
             DE = reversed_.dot(variances)
+            
+            print 'rev:\n', reversed_, '\nvars:\n', variances
+            print 'DI:\n', DI, 'DE:\n', DE
+                        
+            self.alpha = alpha = np.inner(variances, DE)
+            self.beta = beta = np.sum(DE)
+            self.gamma = gamma = np.sum(DI)
+            
+            print 'alpha:', alpha, ' beta:', beta, ' gamma:', gamma
+            
             cs = beta*beta - alpha*gamma
             
-            alpha = np.inner(variance, DE)
-            beta = np.sum(DE)
-            gamma = np.sum(DI)
-                        
             # bounds            
             if cs == 0: return None
             phi_ = beta * DI - gamma * DE
             psi_ = beta * DE - alpha * DI
             val = -psi_ / phi_
+            div = phi_
             if cs > 0:
-                left  = np.hstack(val[div > 0], -np.inf).max()
-                right = np.hstack(val[div < 0], +np.inf).min()
-            else
-                left  = np.hstack(val[div < 0], -np.inf).max()
-                right = np.hstack(val[div > 0], +np.inf).min()
+                left  = val[div > 0].max() if (div > 0).any() else -np.inf
+                right = val[div < 0].min() if (div < 0).any() else +np.inf
+            else:
+                left  = val[div < 0].max() if (div < 0).any() else -np.inf
+                right = val[div > 0].min() if (div > 0).any() else +np.inf
             if left > right : return None
             
             B0, B1, B2 = 0, 0, 0
@@ -182,6 +189,7 @@ class MaxCorrelationInspector(Inspector):
                 (theta - B0 - B1*theta - B2*theta*theta))
             
             theta = (2 * B0) / (1 - B1)
+            print 'B0:', B0, ' B1:', B1, ' B2:', B2, ' theta:', theta
             
             functional = 0
             best_theta = None

@@ -14,7 +14,7 @@ class Classifier(object):
     
     def __init__(self, sample, feature_subset, sample_subset):
         self.X = sample.X
-        self.y = sample.y
+        self.y = sample.y        
         self.feature_subset = feature_subset
         self.sample_subset = sample_subset
         
@@ -101,13 +101,9 @@ class ComplexClassifier(object):
         X_ = self._raw_classify_training_all()
         y_ = self.clf.y_sub()
         predicted = self.alpha * X_ + self.beta
-        
-        print 'y:{}\nclf:{}\ncclf:{}'.format(y_, X_, predicted)
-        
         self.error = np.mean(np.square(predicted-y_))
         self.variance = np.var(predicted)
-        
-        
+                
     def  _find_alpha_beta(self):
         X_ = self._raw_classify_training_all()
         y_ = self.clf.y_sub()
