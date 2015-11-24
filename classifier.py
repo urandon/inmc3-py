@@ -1,6 +1,7 @@
 import numpy as np
 import functools
 
+
 class Sample(object):
     def __init__(self, X, y):
         self.X = X
@@ -23,7 +24,7 @@ class Classifier(object):
         
         self.alpha = np.zeros((self.n_features))
         self.beta = np.zeros((self.n_features))
-        
+                
         if self.n_samples != 0:
             self._find_linear_coefficients()        
     
@@ -83,11 +84,13 @@ class Classifier(object):
 
 class ComplexClassifier(object):
     
-    def __init__(self, weights, multiplier = 1, classifier = None, fidxs=None):
+    # weights shold be sparce: i.e. len(weights) == len(feature_subset)
+    def __init__(self, weights, multiplier = 1, classifier = None, feature_subset = None):
         self.weights = weights
         self.multiplier = multiplier
         self.clf = classifier
-        self.fidxs = fidxs
+        if feature_subset is None: raise ValueError('feature subset must be specified')
+        self.feature_subset = feature_subset
         self.n_samles, self.n_features = 0, 0
         self.alpha, self.beta, self.variance =\
             (np.double(0) for x in xrange(3))
@@ -97,6 +100,7 @@ class ComplexClassifier(object):
             self.set_classifier(classifier)        
 
     def set_classifier(self, cl):
+        self.clf = cl
         self.n_samples, self.n_features = cl.n_samples, cl.n_features
         self.alpha, self.beta = self._find_alpha_beta()
         
@@ -107,7 +111,7 @@ class ComplexClassifier(object):
         self.variance = np.var(predicted)
                 
     def  _find_alpha_beta(self):
-        X_ = self._raw_classify_training_all()
+        X_ = self._raw_classify_training_all() # ???
         y_ = self.clf.y_sub()
         nonnan_cnt = y_.size - np.count_nonzero(np.isnan(y_))
         if nonnan_cnt == 0: return self.alpha, self.beta
@@ -133,7 +137,13 @@ class ComplexClassifier(object):
 
     def classify_training_all(self):
         return self.alpha * self._raw_classify_training_all() + self.beta
-        
-    def classify(self, precedent):
-        return self.alpha * self.clf.classify(precedent) + self.beta
     
+    # precedent should be passed in full, not sparse format
+    def classify(self, precedent):        
+        if len(precedent.shape) > 1:
+            return self.alpha * self.clf.classify(self.weights,\
+                   precedent[:,self.feature_subset]) + self.beta
+        else:
+            return self.alpha * self.clf.classify(self.weights,\
+                   precedent[self.feature_subset]) + self.beta
+        

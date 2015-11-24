@@ -86,7 +86,14 @@ class Inspector(object):
    
     def check(self):
         if len(self.feature_subset) > 1:
-            revrsd = np.linalg.inv(self.discrepancies)
+            try:
+                revrsd = np.linalg.inv(self.discrepancies)
+            except np.linalg.LinAlgError:
+                #print np.linalg.LinAlgError.__name__, ' got:',\
+                #      '\nfeature_subset:', self.feature_subset,\
+                #      '\ndiscrepancies:\n', self.discrepancies
+                return False 
+            
             check_ = self.subset_weights(revrsd)
             if check_ is None: return False
             self.weights, self.functional = check_
@@ -124,9 +131,8 @@ class MaxCorrelationInspector(Inspector):
     complex_functional_description = 'pearson'
     
     def __init__(self, sample, feature_subset):
-        super(MaxCorrelationInspector, self).__init__(sample, feature_subset)        
+        super(MaxCorrelationInspector, self).__init__(sample, feature_subset)
         self.alpha, self.beta, self.gamma = [np.double() for x in xrange(3)]
-        self.DE, self.DI = [], []
         self.cs = np.double()
         self.B0, self.B1, self.B2 = [np.double() for x in xrange(3)]        
         self.sample, self.subset = sample, feature_subset
@@ -141,11 +147,11 @@ class MaxCorrelationInspector(Inspector):
         
         if subsize == 2:            
             v1, v2 = variances
-            rho = discrepancies[0, 1]            
-            if (np.square(v1-v2) - rho * (v1 + v2)): return None # TODO ???
-            c1 = (v2*v2 - v1*v2 + v2*rho) /\
+            rho = discrepancies[0, 1]
+            if (np.square(v1-v2) - rho * (v1 + v2) == 0): return None # TODO ???
+            c1 = (v2*v2 - v1*v2 - v2*rho) /\
                 ((v1-v2)*(v1-v2) - rho*(v1+v2))
-            if not 0 <= c1 <= 1: return None            
+            if not 0 <= c1 <= 1: return None
             weights = [c1, 1-c1]
             functional = (c1 * (v1-v2) + v2) /\
                 np.sqrt((c1 * (v1-v2) + v2 - c1 * (1-c1) * rho) * varC)
@@ -155,15 +161,10 @@ class MaxCorrelationInspector(Inspector):
             DI = np.sum(reversed_, axis = 1)
             DE = reversed_.dot(variances)
             
-            print 'rev:\n', reversed_, '\nvars:\n', variances
-            print 'DI:\n', DI, 'DE:\n', DE
-                        
             self.alpha = alpha = np.inner(variances, DE)
             self.beta = beta = np.sum(DE)
             self.gamma = gamma = np.sum(DI)
-            
-            print 'alpha:', alpha, ' beta:', beta, ' gamma:', gamma
-            
+           
             cs = beta*beta - alpha*gamma
             
             # bounds            
@@ -181,15 +182,15 @@ class MaxCorrelationInspector(Inspector):
             if left > right : return None
             
             B0, B1, B2 = 0, 0, 0
-            B0 = psi_.dot(discrepancies).dot(psi_)
-            B2 = phi_.dot(discrepancies).dot(phi_)
-            B1 = psi_.dot(discrepancies).dot(phi_) +\
-                phi_.dot(discrepancies).dot(psi_)
+            norm_by = 2 * cs * cs
+            B0 = psi_.dot(discrepancies).dot(psi_) / norm_by
+            B2 = phi_.dot(discrepancies).dot(phi_) / norm_by
+            B1 = (psi_.dot(discrepancies).dot(phi_) +\
+                  phi_.dot(discrepancies).dot(psi_)) / norm_by
             K = lambda theta: theta / np.sqrt(varC *\
                 (theta - B0 - B1*theta - B2*theta*theta))
             
             theta = (2 * B0) / (1 - B1)
-            print 'B0:', B0, ' B1:', B1, ' B2:', B2, ' theta:', theta
             
             functional = 0
             best_theta = None
@@ -206,7 +207,7 @@ class MaxCorrelationInspector(Inspector):
             if best_theta is None: return None
             
             weights = best_theta * phi_ / cs + psi_ / cs
-            if (weights <= self._epsilon).any(): return 0
+            if (weights <= self._epsilon).any(): return None
             
         return weights, functional
     
