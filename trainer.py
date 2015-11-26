@@ -2,11 +2,13 @@ import numpy as np
 from enum import Enum
 import gc
 
-import classifier, inspector
+import classifier, inspector, storage
+
 
 class Struct:
     def __init__(self, **entries): 
         self.__dict__.update(entries)
+
 
 class ITrainer(object):    
     def train(sample, voting_quality_threshold, comparision_threshold,\
@@ -19,7 +21,8 @@ class ITrainer(object):
     
     def get_gescription(voting_quality_threshold):
         pass
-    
+
+
 class NullLogger(object):
     def __init__(self):
         pass
@@ -69,10 +72,10 @@ class MaxCorrelationTrainer(object):
     best_functional_msg_template = 'Best {} ({}): {: .3f}'
     epsilon = 1e-4
     
-    def __init__(self, voting_quality_threshold = 1e-3,\
-                comparision_threshold = 1-1e-2,\
-                filtering_type = FilteringType.Normalization,\
-                combining_type = CombiningType.Weighing,\
+    def __init__(self, voting_quality_threshold = 1e-3,
+                comparision_threshold = 1-1e-2,
+                filtering_type = FilteringType.Normalization,
+                combining_type = CombiningType.Weighing,
                 skip_selection = False, logger = PrintLogger()):
         self.voting_quality_threshold = voting_quality_threshold
         self.comparision_threshold = comparision_threshold
@@ -82,33 +85,35 @@ class MaxCorrelationTrainer(object):
         self.logger = logger
         
         self.n_features = None
-        self.history = []
+        #self.history = []
+        self.noncollapsed_combinations = storage.TreeStorageDataHandled()
         self.dominating_combinations = None
         self.classifiers = []
         
         self.best_functional = 0.0
         self.initial_single_functional = 0.0
-        
-    def get_inspector(self, sample, subset):
+
+    @staticmethod
+    def get_inspector(sample, subset):
         return inspector.MaxCorrelationInspector(sample, subset)
-        #pass
-    
-    def initial_combinations_functional(self, best_single):
+
+    @staticmethod
+    def initial_combinations_functional(best_single):
         return best_single
-        #pass
-    
-    def classifier_multiplier(self, functional):
+
+    @staticmethod
+    def classifier_multiplier(functional):
         return 1 / (1 - np.square(functional))
-        #pass
-    
-    def is_functional_better(self, old_functional, new_functional):
+
+    @staticmethod
+    def is_functional_better(old_functional, new_functional):
         return new_functional > old_functional
-        #pass
-    
-    def is_functional_not_worse(self, old_functional, new_functional, threshold):
-        return self.is_functional_better(old_functional * (1 - threshold), new_functional)
-        #pass
-    
+
+    @staticmethod
+    def is_functional_not_worse(old_functional, new_functional, threshold):
+        return MaxCorrelationTrainer.is_functional_better(
+            old_functional * (1 - threshold), new_functional)
+
     def get_resulting_weights(self):
         if self.n_features == None: return []
         res_weights = np.zeros(self.n_features)
@@ -117,17 +122,15 @@ class MaxCorrelationTrainer(object):
         return res_weights
     
     def __str__(self):
-        return '; '.join(map(lambda v: '{: .3f}'.format(v),\
+        return '; '.join(map(lambda v: '{: .3f}'.format(v),
                              self.get_resulting_weights()))
     
     def log_func(self, idx, functional, single=False):
         descr = inspector.MaxCorrelationInspector.single_functional_description\
                if single else\
                inspector.MaxCorrelationInspector.complex_functional_description 
-        self.logger.push(self.best_functional_msg_template.\
-                         format(descr, idx, functional))
+        self.logger.push(self.best_functional_msg_template.format(descr, idx, functional))
 
-        
     def train(self, sample, force_garbage_collector=True):
         logger, log_func = self.logger, self.log_func
         n_objects, n_features = sample.X.shape
@@ -142,7 +145,12 @@ class MaxCorrelationTrainer(object):
         features = range(n_features)
                 
         self.best_functional = self.initial_single_functional
-        
+
+        def hist_push(inspctr):
+            self.noncollapsed_combinations.add_node(
+                inspctr.feature_subset,
+                data=(inspctr.functional, inspctr.weights))
+
         for feature in features:
             subset = [feature]
             combinations.append(subset)
@@ -150,8 +158,8 @@ class MaxCorrelationTrainer(object):
             tested.check()
             
             functional = tested.functional
-            self.history.append(tested)
-            
+            hist_push(tested)
+
             if self.enable_selection and functional > self.best_functional:
                 self.best_functional = functional
                 best_combination = subset
@@ -168,19 +176,19 @@ class MaxCorrelationTrainer(object):
                 if tested.check():
                     pairs[pair[0]].append(pair[1])
                     
-            #logger.push('found pairs: {}'.format(\
+            # logger.push('found pairs: {}'.format(\
             #            {x:pair for (x,pair) in enumerate(pairs)}))
             
             # add list of combinations from the pair map
             for f_idx in xrange(1, n_features):
                 best_prev_func = self.best_functional
                 best_curr_func = self.initial_single_functional
-                new_combinationations = []
+                new_combinations = []
 
                 if force_garbage_collector: gc.collect()
                 
-                #print 'iteration =', f_idx, ' combinations =', combinations
-                #logger.push('iteration = {}, combinations:\n[{}]'.\
+                # print 'iteration =', f_idx, ' combinations =', combinations
+                # logger.push('iteration = {}, combinations:\n[{}]'.\
                 #            format(f_idx, '\n'.join(map(str, combinations))))
                 
                 for combo in combinations:
@@ -195,18 +203,18 @@ class MaxCorrelationTrainer(object):
                         if not functional > best_prev_func * self.comparision_threshold:
                             continue
                         
-                        #print 'combo=', subset, 'func=', functional    
+                        # print 'combo=', subset, 'func=', functional
                             
-                        new_combinationations.append(subset)
-                        self.history.append(tested)
+                        new_combinations.append(subset)
+                        hist_push(tested)
                         if functional > best_curr_func:
                             best_curr_func = functional
                         if functional > self.best_functional * self.comparision_threshold:
                             self.best_functional = functional
                             best_combination = subset
                             best_weights = tested.weights
-                if len(new_combinationations) <= 1: break
-                combinations = new_combinationations
+                if len(new_combinations) <= 1: break
+                combinations = new_combinations
                 log_func(f_idx, best_curr_func)
             # training results
             log_func('_', self.best_functional)
@@ -215,20 +223,19 @@ class MaxCorrelationTrainer(object):
             logger.push('Weights: ' + '; '.join(map(str, best_weights)))
             logger.flush()
         # show must go on
-        high_resulted_combinations = [] # contains complex classifier
+        high_resulted_combinations = []
         logger.push('All combinations: ')
-        for spector in self.history:
-            print best_functional, spector.functional
-            if self.is_functional_not_worse(best_functional, spector.functional,\
-                                           self.voting_quality_threshold):
-                weights = spector.weights
+        for (feature_subset, (functional, weights)) in self.noncollapsed_combinations:
+            if self.is_functional_not_worse(self.best_functional, functional,
+                                            self.voting_quality_threshold):
                 weights_repr = ('{}({})'.format(i, w) for (i, w) in\
-                                zip(spector.clf.feature_subset, weights))
-                logger.push('{}: '.format(spector.functional) +\
+                                zip(feature_subset, weights))
+                logger.push('{}: '.format(functional) +\
                             '; '.join(weights_repr))
-                high_resulted_combinations.append(classifier.ComplexClassifier(\
-                    np.maximum(weights, 0), multiplier=spector.functional,\
-                    feature_subset=spector.clf.feature_subset))
+                high_resulted_combinations.append(classifier.ComplexClassifier(
+                    np.maximum(weights, 0), multiplier=functional,
+                    feature_subset=feature_subset
+                ))
         logger.flush()
         
         # TODO: todo is there
@@ -238,7 +245,6 @@ class MaxCorrelationTrainer(object):
             if not exclude[idx]:
                 self.dominating_combinations.append(hrcombo)
 
-    # TODO: ComplexClassifier weights sparse supports
     def forecast(self, train_sample, test_sample, all_results=True):
         logger, log_func = self.logger, self.log_func
         if self.dominating_combinations is None or\
@@ -248,21 +254,20 @@ class MaxCorrelationTrainer(object):
         res_accepted = np.zeros((test_sample.size), dtype=bool)
         norms = np.zeros((test_sample.size))
         
-        dominating_results = np.zeros((test_sample.size,\
-                                       len(self.dominating_combinations)))
+        dominating_results = np.zeros((
+            test_sample.size, len(self.dominating_combinations)))
         
         for cidx, cclf in enumerate(self.dominating_combinations):
             #_, feature_subset = np.nonzero(cclf.weights > 0)
             #weights = cclf.weights[feature_subset]         
             feature_subset, weights = cclf.feature_subset, cclf.weights
-            train_subset, test_subset = map(lambda sample:\
-                np.nonzero(~np.isnan(sample.X[:,feature_subset].any(axis=1)))[0],\
+            train_subset, test_subset = map(
+                lambda sample: np.nonzero(~np.isnan(sample.X[:,feature_subset].any(axis=1)))[0],
                 (train_sample, test_sample))
 
-            nclf = classifier.ComplexClassifier(weights, multiplier=1,\
+            nclf = classifier.ComplexClassifier(weights, multiplier=1,
                                                 feature_subset=feature_subset)
-            nclf.set_classifier(classifier.Classifier(\
-                train_sample, feature_subset, train_subset))
+            nclf.set_classifier(classifier.Classifier(train_sample, feature_subset, train_subset))
 
             result = nclf.classify(test_sample.X[test_subset,:])
             result = np.nan_to_num(result)
@@ -291,14 +296,12 @@ class MaxCorrelationTrainer(object):
         
         error = np.mean((y_test_predicted != y_test)[res_accepted])
         for class_ in [0, 1]:
-            class_errors[class_] = np.sum(\
-                ((y_test == class_) & (y_test_predicted != class_))[res_accepted])
+            class_errors[class_] = np.sum(((y_test == class_) & (y_test_predicted != class_))[res_accepted])
         
-        [[var_result, cov], [_, var_C]] = np.cov(\
-            y_test_predicted[res_accepted], y_test[res_accepted])
+        [[var_result, cov], [_, var_C]] = np.cov(y_test_predicted[res_accepted], y_test[res_accepted])
         deviation = np.square((y_test-y_test_predicted)[res_accepted]).sum()
         
-        stats = Struct(error=error, class_errors=class_errors, cov=cov,\
+        stats = Struct(error=error, class_errors=class_errors, cov=cov,
                        deviation=deviation, var_result=var_result, var_C=var_C)
         
         return res, stats
