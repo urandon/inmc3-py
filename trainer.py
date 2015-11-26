@@ -86,7 +86,7 @@ class MaxCorrelationTrainer(object):
         
         self.n_features = None
         #self.history = []
-        self.noncollapsed_combinations = storage.TreeStorageDataHandled()
+        self.noncollapsed_combinations = storage.TreeStorage(data_handled=True)
         self.dominating_combinations = None
         self.classifiers = []
         
@@ -140,7 +140,8 @@ class MaxCorrelationTrainer(object):
         best_combination = None
         best_weights = None
 
-        combinations = []
+        #combinations = []
+        combinations = storage.TreeStorage(data_handled=False)
         # use all the features w/o selection        
         features = range(n_features)
                 
@@ -183,7 +184,7 @@ class MaxCorrelationTrainer(object):
             for f_idx in xrange(1, n_features):
                 best_prev_func = self.best_functional
                 best_curr_func = self.initial_single_functional
-                new_combinations = []
+                new_combinations = storage.TreeStorage(data_handled=False)
 
                 if force_garbage_collector: gc.collect()
                 
@@ -214,6 +215,7 @@ class MaxCorrelationTrainer(object):
                             best_combination = subset
                             best_weights = tested.weights
                 if len(new_combinations) <= 1: break
+                del combinations
                 combinations = new_combinations
                 log_func(f_idx, best_curr_func)
             # training results
@@ -228,9 +230,9 @@ class MaxCorrelationTrainer(object):
         for (feature_subset, (functional, weights)) in self.noncollapsed_combinations:
             if self.is_functional_not_worse(self.best_functional, functional,
                                             self.voting_quality_threshold):
-                weights_repr = ('{}({})'.format(i, w) for (i, w) in\
+                weights_repr = ('{}({})'.format(i, w) for (i, w) in
                                 zip(feature_subset, weights))
-                logger.push('{}: '.format(functional) +\
+                logger.push('{}: '.format(functional) +
                             '; '.join(weights_repr))
                 high_resulted_combinations.append(classifier.ComplexClassifier(
                     np.maximum(weights, 0), multiplier=functional,

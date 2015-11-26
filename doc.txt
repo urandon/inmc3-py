@@ -25,6 +25,8 @@ HowTo work with sparce data:
 ----------------------------------
 
 TODO:
+    * Tests on last commit
+
 	* Possible debug
 	* Sparce data support
 	* Parallelized training

@@ -38,6 +38,9 @@ class TreeStorage(object):
         self.set_data(node, data)
         return node
 
+    def append(self, combo):
+        self.add_node(combo)
+
     def __setitem__(self, key, value):
         self.add_node(key, data=value)
 
