@@ -1,5 +1,6 @@
 import numpy as np
 from enum import Enum
+import gc
 
 import classifier, inspector
 
@@ -127,7 +128,7 @@ class MaxCorrelationTrainer(object):
                          format(descr, idx, functional))
 
         
-    def train(self, sample): # sample is X, y tuple
+    def train(self, sample, force_garbage_collector=True):
         logger, log_func = self.logger, self.log_func
         n_objects, n_features = sample.X.shape
         self.n_features = n_features
@@ -175,6 +176,8 @@ class MaxCorrelationTrainer(object):
                 best_prev_func = self.best_functional
                 best_curr_func = self.initial_single_functional
                 new_combinationations = []
+
+                if force_garbage_collector: gc.collect()
                 
                 #print 'iteration =', f_idx, ' combinations =', combinations
                 #logger.push('iteration = {}, combinations:\n[{}]'.\
