@@ -15,10 +15,12 @@ class TreeStorage(object):
         return self.size
 
     def get_node(self, combo, root=None):
-        if root is None: root = self.root
+        if root is None:
+            root = self.root
         node = root
         for idx in combo:
-            if idx not in node: return None
+            if idx not in node:
+                return None
             node = node[idx]
         return node
 
@@ -26,13 +28,14 @@ class TreeStorage(object):
         return self.get_node(item)
 
     def set_data(self, node, data):
-        if self.data_key not in node: self.size += 1
+        if self.data_key not in node:
+            self.size += 1
         node[self.data_key] = data
 
     def add_node(self, combo, data=None, root=None):
-        if root is None: root = self.root
+        if root is None:
+            root = self.root
         node = root
-        allocated = False
         for idx in combo:
             node = node.setdefault(idx, {})
         self.set_data(node, data)
@@ -50,9 +53,11 @@ class TreeStorage(object):
         else:
             return self.iterkeys()
 
-    def iterkeys(self, combo = None, root = None):
-        if root is None: root = self.root
-        if combo is None: combo = []
+    def iterkeys(self, combo=None, root=None):
+        if root is None:
+            root = self.root
+        if combo is None:
+            combo = []
         for idx, node in root.iteritems():
             if idx == self.data_key:
                 yield combo
@@ -61,8 +66,10 @@ class TreeStorage(object):
                     yield ret
 
     def iteritems(self, combo=None, root=None):
-        if root is None: root = self.root
-        if combo is None: combo = []
+        if root is None:
+            root = self.root
+        if combo is None:
+            combo = []
         for idx, node in root.iteritems():
             if idx == self.data_key:
                 yield (combo, node)
@@ -75,8 +82,10 @@ class TreeStorage(object):
         storage.data_handled = self.data_handled
         if self.data_handled:
             for (combo, data) in storage:
-                if filter((combo, data)): self.add_node(combo, data=data)
+                if filter((combo, data)):
+                    self.add_node(combo, data=data)
         else:
             for combo in storage:
-                if filter(combo): self.add_node(combo)
+                if filter(combo):
+                    self.add_node(combo)
         storage.data_handled = is_storage_handled
