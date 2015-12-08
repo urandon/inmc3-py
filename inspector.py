@@ -18,6 +18,9 @@ class IInspectior(object):
         self.clf = clf
 
 class Inspector(object):
+    
+    DETERMINANT_EPS = 1e-5
+    
     def __init__(self, sample, feature_subset):
         self.pearson = [None]
         self.weights = [None]
@@ -87,6 +90,8 @@ class Inspector(object):
     def check(self):
         if len(self.feature_subset) > 1:
             try:
+                if np.abs(np.linalg.det(self.discrepancies)) < self.DETERMINANT_EPS:
+                    return False                
                 revrsd = np.linalg.inv(self.discrepancies)
             except np.linalg.LinAlgError:
                 #print np.linalg.LinAlgError.__name__, ' got:',\

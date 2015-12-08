@@ -57,10 +57,8 @@ class TreeStorage(object):
             if idx == self.data_key:
                 yield combo
             else:
-                combo.append(idx)
-                for ret in self.iterkeys(combo, node):
+                for ret in self.iterkeys(combo + [idx], node):
                     yield ret
-                combo.pop()
 
     def iteritems(self, combo=None, root=None):
         if root is None: root = self.root
@@ -69,10 +67,8 @@ class TreeStorage(object):
             if idx == self.data_key:
                 yield (combo, node)
             else:
-                combo.append(idx)
-                for ret in self.iteritems(combo, node):
+                for ret in self.iteritems(combo + [idx], node):
                     yield ret
-                combo.pop()
 
     def join(self, storage, filter=lambda x: True):
         is_storage_handled = storage.data_handled

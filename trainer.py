@@ -140,7 +140,6 @@ class MaxCorrelationTrainer(object):
         best_combination = None
         best_weights = None
 
-        #combinations = []
         combinations = storage.TreeStorage(data_handled=False)
         # use all the features w/o selection        
         features = range(n_features)
@@ -148,6 +147,9 @@ class MaxCorrelationTrainer(object):
         self.best_functional = self.initial_single_functional
 
         def hist_push(inspctr):
+            if inspctr.feature_subset == []:
+                print inspctr.__dict__
+                raise Exception
             self.noncollapsed_combinations.add_node(
                 inspctr.feature_subset,
                 data=(inspctr.functional, inspctr.weights))
@@ -167,7 +169,7 @@ class MaxCorrelationTrainer(object):
                 best_weights = tested.weights
                     
         if self.enable_selection:
-            log_func(1, self.best_functional, single=True)
+            log_func(0, self.best_functional, single=True)
             best_functional = self.initial_combinations_functional(self.best_functional)
             
             # create pair map
@@ -218,16 +220,22 @@ class MaxCorrelationTrainer(object):
                 del combinations
                 combinations = new_combinations
                 log_func(f_idx, best_curr_func)
+                                
             # training results
             log_func('_', self.best_functional)
             logger.push('Best combination: ' + '; '.join(map(str, best_combination)))
             logger.flush()
             logger.push('Weights: ' + '; '.join(map(str, best_weights)))
             logger.flush()
-        # show must go on
+                
+        ##debug
+        return self.noncollapsed_combinations
+        ##debug
+
         high_resulted_combinations = []
-        logger.push('All combinations: ')
-        for (feature_subset, (functional, weights)) in self.noncollapsed_combinations:
+        logger.push('All combinations: ')                
+        for (feature_subset, (functional, weights))\
+            in self.noncollapsed_combinations.iteritems():
             if self.is_functional_not_worse(self.best_functional, functional,
                                             self.voting_quality_threshold):
                 weights_repr = ('{}({})'.format(i, w) for (i, w) in
