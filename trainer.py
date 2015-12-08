@@ -1,19 +1,10 @@
 import numpy as np
 import itertools
 
-import classifier
-import inspector
-import storage
-
-
-def gc_collect():
-    import gc
-    gc.collect()
-
-
-class Struct:
-    def __init__(self, **entries):
-        self.__dict__.update(entries)
+from . import classifier
+from . import inspector
+from . import storage
+from . import utils
 
 
 class ITrainer(object):
@@ -29,49 +20,6 @@ class ITrainer(object):
         pass
 
 
-class NullLogger(object):
-    def __init__(self):
-        pass
-
-    def push(self, string):
-        return self
-
-    def flush(self):
-        return self
-
-
-class PrintLogger(object):
-    def __init__(self):
-        import sys
-        self.fo = sys.stdout
-
-    def push(self, string):
-        self.fo.write(string)
-        self.fo.write('\n')
-        return self
-
-    def flush(self):
-        self.fo.flush()
-        return self
-
-
-class FileLogger(object):
-    def __init__(self, filename):
-        self.fo = open(filename, 'w')
-
-    def push(self, string):
-        self.fo.write(string)
-        self.fo.write('\n')
-        return self
-
-    def flush(self):
-        self.fo.flush()
-        return self
-
-    def __del__(self):
-        self.fo.close()
-
-
 class MaxCorrelationTrainer(object):
 
     initial_single_functional = -np.inf
@@ -82,7 +30,7 @@ class MaxCorrelationTrainer(object):
                  comparision_threshold=1-1e-2,
                  filtering_type='domination',
                  combining_type='mnk',
-                 skip_selection=False, logger=PrintLogger(),
+                 skip_selection=False, logger=utils.PrintLogger(),
                  parallel_profile=None,
                  iterable_map=True):
         self.voting_quality_threshold = voting_quality_threshold
@@ -157,11 +105,11 @@ class MaxCorrelationTrainer(object):
 
     def garbage_collect(self):
         if self.parallel_profile is None:
-            gc_collect()
+            utils.gc_collect()
         elif str.startswith(self.parallel_profile, 'threads-'):
-            gc_collect()
+            utils.gc_collect()
         else:
-            self.rc.dirrect_view().apply(gc_collect)
+            self.rc.dirrect_view().apply(utils.gc_collect)
 
     def get_resulting_weights(self):
         if self.n_features is None:
@@ -245,9 +193,9 @@ class MaxCorrelationTrainer(object):
                 if not tested.functional >\
                         best_prev_func * self.comparision_threshold:
                     return None
-                return Struct(feature_subset=tested.feature_subset,
-                              functional=tested.functional,
-                              weights=tested.weights)
+                return utils.Struct(feature_subset=tested.feature_subset,
+                                    functional=tested.functional,
+                                    weights=tested.weights)
 
             for iter_idx in xrange(1, n_features):
                 best_prev_func = self.best_functional
@@ -370,7 +318,7 @@ class MaxCorrelationTrainer(object):
             np.cov(y_test_predicted[res_accepted], y_test[res_accepted])
         deviation = np.square((y_test-y_test_predicted)[res_accepted]).sum()
 
-        stats = Struct(error=error, class_errors=class_errors, cov=cov,
-                       deviation=deviation, var_result=var_result, var_C=var_C)
-
+        stats = utils.Struct(error=error, class_errors=class_errors,
+                             cov=cov, deviation=deviation,
+                             var_result=var_result, var_C=var_C)
         return res, stats

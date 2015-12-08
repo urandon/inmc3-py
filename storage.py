@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Module contains storage for combination-value pairs"""
+'''
+Module contains storage for combination-value pairs
+'''
 
 
 class TreeStorage(object):

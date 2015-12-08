@@ -1,5 +1,5 @@
 import numpy as np
-import classifier
+from . import classifier
 
 
 class IInspectior(object):
