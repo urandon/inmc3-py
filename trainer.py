@@ -1,9 +1,17 @@
 import numpy as np
 from enum import Enum
 import gc
+import itertools
+from IPython.parallel import Client
+from multiprocessing.pool import ThreadPool 
 
 import classifier, inspector, storage
 
+
+def gc_collect():
+    import gc
+    gc.collect()
+    
 
 class Struct:
     def __init__(self, **entries): 
@@ -26,22 +34,26 @@ class ITrainer(object):
 class NullLogger(object):
     def __init__(self):
         pass
+    
     def push(self, string):
-        pass
+        return self
 
     def flush(self):
-        pass
-    
+        return self    
     
 class PrintLogger(object):
     def __init__(self):
-        pass
+        import sys
+        self.fo = sys.stdout
     
-    def push(self, string):
-        print string
+    def push(self, string):        
+        self.fo.write(string)
+        self.fo.write('\n')
+        return self
     
     def flush(self):
-        pass
+        self.fo.flush()
+        return self
 
         
 class FileLogger(object):
@@ -51,9 +63,11 @@ class FileLogger(object):
     def push(self, string):
         self.fo.write(string)
         self.fo.write('\n')
+        return self
     
     def flush(self):
         self.fo.flush()
+        return self
             
     def __del__(self):
         self.fo.close()
@@ -76,7 +90,9 @@ class MaxCorrelationTrainer(object):
                 comparision_threshold = 1-1e-2,
                 filtering_type = FilteringType.Normalization,
                 combining_type = CombiningType.Weighing,
-                skip_selection = False, logger = PrintLogger()):
+                skip_selection = False, logger = PrintLogger(),
+                parallel_profile = None,
+                iterable_map = True):
         self.voting_quality_threshold = voting_quality_threshold
         self.comparision_threshold = comparision_threshold
         self.filtering_type = filtering_type
@@ -92,6 +108,8 @@ class MaxCorrelationTrainer(object):
         
         self.best_functional = 0.0
         self.initial_single_functional = 0.0
+        self.set_parallel_profile(parallel_profile)
+        self.iterable_map = iterable_map
 
     @staticmethod
     def get_inspector(sample, subset):
@@ -113,6 +131,40 @@ class MaxCorrelationTrainer(object):
     def is_functional_not_worse(old_functional, new_functional, threshold):
         return MaxCorrelationTrainer.is_functional_better(
             old_functional * (1 - threshold), new_functional)
+    
+    def set_parallel_profile(self, parallel_profile=None):
+        self.parallel_profile = parallel_profile
+        if parallel_profile is None:
+            pass
+        elif str.startswith(parallel_profile, 'threads-'):
+            from multiprocessing.pool import ThreadPool 
+            self.n_threads = int(parallel_profile[len('threads-'):])
+            self.pool = ThreadPool(processes=self.n_threads)
+            self.pool._maxtasksperchild = 10**5
+            self.logger.push('Running parallel in {} threads'.format(self.n_threads))
+        else:
+            from IPython.parallel import Client
+            self.rc = Client(profile=parallel_profile)
+            dv = self.rc.direct_view()
+            self.logger.push('Running parallel on cluster on {} cores'.format(len(dv)))
+    
+    def get_pmap(self):
+        if self.parallel_profile is None:
+            return itertools.imap if self.iterable_map else map
+        if str.startswith(self.parallel_profile, 'threads-'):
+            return self.pool.imap if self.iterable_map else self.pool.map
+        else:
+            lbv = self.rc.load_balanced_view()
+            return lbv.imap if self.iterable_map else lbv.map_sync
+    
+    def garbage_collect(self):
+        if self.parallel_profile is None:
+            gc_collect()
+        elif str.startswith(self.parallel_profile, 'threads-'):
+            gc_collect()
+        else:
+            self.rc.dirrect_view().apply(gc_collect)
+
 
     def get_resulting_weights(self):
         if self.n_features == None: return []
@@ -130,6 +182,7 @@ class MaxCorrelationTrainer(object):
                if single else\
                inspector.MaxCorrelationInspector.complex_functional_description 
         self.logger.push(self.best_functional_msg_template.format(descr, idx, functional))
+        self.logger.flush()
 
     def train(self, sample, force_garbage_collector=True):
         logger, log_func = self.logger, self.log_func
@@ -147,9 +200,6 @@ class MaxCorrelationTrainer(object):
         self.best_functional = self.initial_single_functional
 
         def hist_push(inspctr):
-            if inspctr.feature_subset == []:
-                print inspctr.__dict__
-                raise Exception
             self.noncollapsed_combinations.add_node(
                 inspctr.feature_subset,
                 data=(inspctr.functional, inspctr.weights))
@@ -169,69 +219,67 @@ class MaxCorrelationTrainer(object):
                 best_weights = tested.weights
                     
         if self.enable_selection:
-            log_func(0, self.best_functional, single=True)
+            log_func(1, self.best_functional, single=True)
             best_functional = self.initial_combinations_functional(self.best_functional)
             
-            # create pair map
-            for pair in ([x, y] for x in xrange(n_features)\
-                         for y in xrange(x+1, n_features)):
-                tested = self.get_inspector(sample, pair)
-                if tested.check():
-                    pairs[pair[0]].append(pair[1])
-                    
-            # logger.push('found pairs: {}'.format(\
-            #            {x:pair for (x,pair) in enumerate(pairs)}))
+            pmap = self.get_pmap()
             
-            # add list of combinations from the pair map
-            for f_idx in xrange(1, n_features):
+            for first in xrange(n_features):
+                def pair_check(second):
+                    if self.get_inspector(sample, [first, second]).check():
+                        return second
+                    return None
+                second_check = pmap(pair_check, xrange(first+1, n_features))
+                pairs[first] = filter(None, second_check)
+            
+            def combo_pair_iter(combos):
+                for combo in combos:
+                    last = combo[-1]
+                    for second in pairs[last]:
+                        yield combo + [second]
+            
+            def test_check(combo):
+                tested = self.get_inspector(sample, combo)
+                if not tested.check():
+                    return None
+                if not tested.functional > best_prev_func * self.comparision_threshold:
+                    return None
+                return Struct(feature_subset=tested.feature_subset,
+                              functional=tested.functional,
+                              weights=tested.weights)
+
+            for iter_idx in xrange(1, n_features):
                 best_prev_func = self.best_functional
                 best_curr_func = self.initial_single_functional
                 new_combinations = storage.TreeStorage(data_handled=False)
+                if force_garbage_collector: self.garbage_collect()
 
-                if force_garbage_collector: gc.collect()
-                
-                # print 'iteration =', f_idx, ' combinations =', combinations
-                # logger.push('iteration = {}, combinations:\n[{}]'.\
-                #            format(f_idx, '\n'.join(map(str, combinations))))
-                
-                for combo in combinations:
-                    last = combo[f_idx - 1]
-                    for fpair in pairs[last]:
-                        subset = combo + [fpair]
-                        tested = self.get_inspector(sample, subset)
-                        if not tested.check():
-                                continue
-                            
-                        functional = tested.functional
-                        if not functional > best_prev_func * self.comparision_threshold:
-                            continue
-                        
-                        # print 'combo=', subset, 'func=', functional
-                            
-                        new_combinations.append(subset)
-                        hist_push(tested)
-                        if functional > best_curr_func:
-                            best_curr_func = functional
-                        if functional > self.best_functional * self.comparision_threshold:
-                            self.best_functional = functional
-                            best_combination = subset
-                            best_weights = tested.weights
+                testeds = pmap(test_check, combo_pair_iter(combinations))
+                for (combo, tested) in itertools.izip(combo_pair_iter(combinations),
+                                                      testeds):
+                    if tested is None: continue
+                    hist_push(tested)
+                    new_combinations.append(combo)
+                    if tested.functional > best_curr_func:
+                        best_curr_func = tested.functional
+                    if tested.functional > self.best_functional:
+                        self.best_functional = functional
+                        best_combination = combo
+                        best_weights = tested.weights
                 if len(new_combinations) <= 1: break
                 del combinations
                 combinations = new_combinations
-                log_func(f_idx, best_curr_func)
-                                
+                log_func(iter_idx+1, best_curr_func)
+
             # training results
             log_func('_', self.best_functional)
             logger.push('Best combination: ' + '; '.join(map(str, best_combination)))
-            logger.flush()
-            logger.push('Weights: ' + '; '.join(map(str, best_weights)))
-            logger.flush()
+            logger.push('Weights: ' + '; '.join(map(str, best_weights))).flush()
                 
         ##debug
         return self.noncollapsed_combinations
         ##debug
-
+ 
         high_resulted_combinations = []
         logger.push('All combinations: ')                
         for (feature_subset, (functional, weights))\
