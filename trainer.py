@@ -74,13 +74,6 @@ class FileLogger(object):
     
     
 class MaxCorrelationTrainer(object):    
-    class FilteringType(Enum):
-        Normalization = 0
-        Domination = 1
-    
-    class CombiningType(Enum):
-        Weighing = 0
-        MNK = 1
     
     initial_single_functional = -np.inf
     best_functional_msg_template = 'Best {} ({}): {: .3f}'
@@ -88,8 +81,8 @@ class MaxCorrelationTrainer(object):
     
     def __init__(self, voting_quality_threshold = 1e-3,
                 comparision_threshold = 1-1e-2,
-                filtering_type = FilteringType.Normalization,
-                combining_type = CombiningType.Weighing,
+                filtering_type = 'domination',
+                combining_type = 'mnk',
                 skip_selection = False, logger = PrintLogger(),
                 parallel_profile = None,
                 iterable_map = True):
@@ -145,8 +138,15 @@ class MaxCorrelationTrainer(object):
         else:
             from IPython.parallel import Client
             self.rc = Client(profile=parallel_profile)
-            dv = self.rc.direct_view()
-            self.logger.push('Running parallel on cluster on {} cores'.format(len(dv)))
+            self.dv = self.rc.direct_view()
+            with self.dv.sync_imports():
+                import sys
+            import sys
+            self.dv['path'] = sys.path
+            with self.dv.sync_imports():
+                import trainer, inspector, classifier, storage
+            self.logger.push('Running parallel on cluster on {} cores'.format(
+                    len(self.dv)))
     
     def get_pmap(self):
         if self.parallel_profile is None:
