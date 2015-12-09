@@ -175,7 +175,7 @@ class MaxCorrelationTrainer(object):
                     if tested.functional > best_curr_func:
                         best_curr_func = tested.functional
                     if tested.functional > self.best_functional:
-                        self.best_functional = functional
+                        self.best_functional = tested.functional
                         best_combination = combo
                         best_weights = tested.weights
                 if len(new_combinations) <= 1:
