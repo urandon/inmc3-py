@@ -23,7 +23,12 @@ class Sample(object):
     def __init__(self, X, y):
         self.X = X
         self.y = y
+        self.X.flags.writeable = False
+        self.y.flags.writeable = False
         self.size, self.n_features = X.shape
+
+    def copy(self):
+        return Sample(self.X.copy(), self.y.copy())
 
 
 class NullLogger(object):
@@ -117,5 +122,13 @@ class Mapper(object):
             gc_collect()
         else:
             self.dv.apply(gc_collect)
+
+    def push(self, **kwargs):
+        if self._parallel_profile is None:
+            pass
+        elif str.startswith(self._parallel_profile, 'threads-'):
+            pass
+        else:
+            self.dv.push(kwargs)
 
 logger = PrintLogger()

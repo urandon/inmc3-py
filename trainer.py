@@ -1,5 +1,5 @@
 import numpy as np
-import itertools
+import itertools as it
 
 from . import classifier
 from . import inspector
@@ -132,13 +132,16 @@ class MaxCorrelationTrainer(object):
 
             pmap = self.mapper.imap() if self.iterable_map\
                 else self.mapper.map()
+            self.mapper.push(sample=sample.copy())
 
             for first in xrange(n_features):
-                def pair_check(second):
-                    if self.get_inspector(sample, [first, second]).check():
-                        return second
+                def pair_check(pair):
+                    if self.get_inspector(sample, pair).check():
+                        return pair[1]
                     return None
-                second_check = pmap(pair_check, xrange(first+1, n_features))
+                second_check = pmap(pair_check,
+                                    it.izip(it.cycle([first]),
+                                            xrange(first + 1, n_features)))
                 pairs[first] = filter(None, second_check)
 
             def combo_pair_iter(combos):
@@ -166,8 +169,8 @@ class MaxCorrelationTrainer(object):
                     self.mapper.gc_collect()
 
                 testeds = pmap(test_check, combo_pair_iter(combinations))
-                for (combo, tested) in itertools.izip(
-                        combo_pair_iter(combinations), testeds):
+                for (combo, tested) in it.izip(combo_pair_iter(combinations),
+                                               testeds):
                     if tested is None:
                         continue
                     hist_push(tested)
