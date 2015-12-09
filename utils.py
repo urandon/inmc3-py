@@ -10,6 +10,10 @@ def gc_collect():
     gc.collect()
 
 
+def top_combos(combos, k=40):
+    return sorted(combos, key=lambda (c, (f, w)): f)[-k:]
+
+
 class Struct:
     def __init__(self, **entries):
         self.__dict__.update(entries)
