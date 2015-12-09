@@ -47,7 +47,7 @@ class MaxCorrelationTrainer(object):
 
         self.best_functional = 0.0
         self.initial_single_functional = 0.0
-        self.set_parallel_profile(parallel_profile)
+        self.mapper = utils.Mapper(parallel_profile)
         self.iterable_map = iterable_map
 
     @staticmethod
@@ -70,46 +70,6 @@ class MaxCorrelationTrainer(object):
     def is_functional_not_worse(old_functional, new_functional, threshold):
         return MaxCorrelationTrainer.is_functional_better(
             old_functional * (1 - threshold), new_functional)
-
-    def set_parallel_profile(self, parallel_profile=None):
-        self.parallel_profile = parallel_profile
-        if parallel_profile is None:
-            pass
-        elif str.startswith(parallel_profile, 'threads-'):
-            from multiprocessing.pool import ThreadPool
-            self.n_threads = int(parallel_profile[len('threads-'):])
-            self.pool = ThreadPool(processes=self.n_threads)
-            self.pool._maxtasksperchild = 10**5
-            self.logger.push('Running parallel in {} threads'.
-                             format(self.n_threads))
-        else:
-            from IPython.parallel import Client
-            self.rc = Client(profile=parallel_profile)
-            self.dv = self.rc.direct_view()
-            with self.dv.sync_imports():
-                import sys
-            self.dv['path'] = sys.path
-            with self.dv.sync_imports():
-                import trainer, inspector, classifier, storage
-            self.logger.push('Running parallel on cluster on {} cores'.format(
-                    len(self.dv)))
-
-    def get_pmap(self):
-        if self.parallel_profile is None:
-            return itertools.imap if self.iterable_map else map
-        if str.startswith(self.parallel_profile, 'threads-'):
-            return self.pool.imap if self.iterable_map else self.pool.map
-        else:
-            lbv = self.rc.load_balanced_view()
-            return lbv.imap if self.iterable_map else lbv.map_sync
-
-    def garbage_collect(self):
-        if self.parallel_profile is None:
-            utils.gc_collect()
-        elif str.startswith(self.parallel_profile, 'threads-'):
-            utils.gc_collect()
-        else:
-            self.rc.dirrect_view().apply(utils.gc_collect)
 
     def get_resulting_weights(self):
         if self.n_features is None:
@@ -170,7 +130,8 @@ class MaxCorrelationTrainer(object):
             self.best_functional = self.initial_combinations_functional(
                 self.best_functional)
 
-            pmap = self.get_pmap()
+            pmap = self.mapper.imap() if self.iterable_map\
+                else self.mapper.map()
 
             for first in xrange(n_features):
                 def pair_check(second):
@@ -202,7 +163,7 @@ class MaxCorrelationTrainer(object):
                 best_curr_func = self.initial_single_functional
                 new_combinations = storage.TreeStorage(data_handled=False)
                 if force_garbage_collector:
-                    self.garbage_collect()
+                    self.mapper.gc_collect()
 
                 testeds = pmap(test_check, combo_pair_iter(combinations))
                 for (combo, tested) in itertools.izip(
