@@ -39,8 +39,7 @@ class Inspector(object):
         self.feature_mapping = {sub: idx for (idx, sub)
                                 in enumerate(feature_subset)}
         self.sample_subset = np.nonzero(
-            ~np.isnan(self.sample.X[:, feature_subset]
-                      .any(axis=1)))
+            ~np.isnan(self.sample.X[:, feature_subset].any(axis=1)))
         if type(self.sample_subset) is tuple:
             self.sample_subset = self.sample_subset[0]
         self.sample_mapping = {sub: idx for (idx, sub)
@@ -66,7 +65,7 @@ class Inspector(object):
         self.discrepancies /= (self.n_samples + 5)
 
         self.eC = np.nanmean(subC)
-        self.varC = np.nanstd(subC).mean() ** 2
+        self.varC = np.square(np.nanstd(subC)).mean()
         self.pearson = np.zeros(self.n_features)
         # pearson = [self.pearson(k, values) for in xrange(self.n_features)]
         e1, e2 = self.expecteds[np.newaxis], self.eC

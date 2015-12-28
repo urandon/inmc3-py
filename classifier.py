@@ -28,18 +28,18 @@ class Classifier(object):
             self._find_linear_coefficients()
 
     def _find_linear_coefficients(self):
-        y_ = np.nan_to_num(self.y[self.sample_subset])
-        X_ = np.nan_to_num(self.X[self.sample_subset, :]
-                           [:, self.feature_subset])
+        y_ = np.double(np.nan_to_num(self.y[self.sample_subset]))
+        X_ = np.double(np.nan_to_num(self.X[self.sample_subset, :]
+                                     [:, self.feature_subset]))
 
         x = np.sum(X_, axis=0)
         xy = np.dot(y_, X_)
         x2 = np.sum(np.square(X_), axis=0)
         y = np.sum(y_)
 
-        m = np.abs(x2 - x*x / self.n_samples) > self._epsilon
-        self.alpha[m] = (xy[m] - x[m]*y/self.n_samples) /\
-            (x2[m] - np.square(x[m])/self.n_samples)
+        m = np.abs(x2 - x * x / self.n_samples) > self._epsilon
+        self.alpha[m] = (xy[m] - x[m] * y / self.n_samples) /\
+            (x2[m] - np.square(x[m]) / self.n_samples)
         self.beta = (y - self.alpha * x) / self.n_samples
 
     def X_sub(self):
