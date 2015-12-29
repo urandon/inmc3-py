@@ -26,7 +26,7 @@ class IInspectior(object):
 
 class Inspector(object):
 
-    DETERMINANT_EPS = 1e-5
+    DETERMINANT_EPS = 1e-30
 
     def __init__(self, sample, feature_subset):
         self.pearson = [None]
