@@ -186,6 +186,8 @@ class MaxCorrelationTrainer(object):
                 del combinations
                 combinations = new_combinations
                 log_func(iter_idx+1, best_curr_func)
+                logger.push('\tcombinations to process: {}'.
+                            format(len(combinations)))
 
             # training results
             log_func('_', self.best_functional)
