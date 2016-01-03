@@ -143,6 +143,8 @@ class MaxCorrelationTrainer(object):
                                     it.izip(it.cycle([first]),
                                             xrange(first + 1, n_features)))
                 pairs[first] = filter(None, second_check)
+            logger.push('pairs found = {}'.format(
+                sum((len(pair) for pair in pairs))))
 
             def combo_pair_iter(combos):
                 for combo in combos:
@@ -196,32 +198,7 @@ class MaxCorrelationTrainer(object):
             logger.push('Weights: ' + '; '.join(
                 map(str, best_weights))).flush()
 
-        # debug
         return self.noncollapsed_combinations
-        # debug
-
-        high_resulted_combinations = []
-        logger.push('All combinations: ')
-        for (feature_subset, (functional, weights))\
-                in self.noncollapsed_combinations.iteritems():
-            if self.is_functional_not_worse(self.best_functional, functional,
-                                            self.voting_quality_threshold):
-                weights_repr = ('{}({})'.format(i, w) for (i, w) in
-                                zip(feature_subset, weights))
-                logger.push('{}: '.format(functional) +
-                            '; '.join(weights_repr))
-                high_resulted_combinations.append(classifier.ComplexClassifier(
-                    np.maximum(weights, 0), multiplier=functional,
-                    feature_subset=feature_subset
-                ))
-        logger.flush()
-
-        # TODO: todo is there
-        exclude = np.zeros((len(high_resulted_combinations)), dtype=bool)
-        self.dominating_combinations = []
-        for idx, hrcombo in enumerate(high_resulted_combinations):
-            if not exclude[idx]:
-                self.dominating_combinations.append(hrcombo)
 
     def forecast(self, train_sample, test_sample, all_results=True):
         # logger = self.logger
