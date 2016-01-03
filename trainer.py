@@ -265,3 +265,21 @@ class MaxCorrelationTrainer(object):
                              cov=cov, deviation=deviation,
                              var_result=var_result, var_C=var_C)
         return res, stats
+
+
+class FeatureGenerator(object):
+
+    @staticmethod
+    def from_combinations(train_sample, dest_sample, combinations):
+        ncombos = len(combinations)
+        ndest_samples = dest_sample.size
+        dest_new_X = np.zeros((ndest_samples, ncombos))
+        for cidx, (feature_subset, (_, weights)) in enumerate(combinations):
+            train_subset = np.nonzero(~np.isnan(
+                train_sample.X[:, feature_subset].any(axis=1)))[0]
+            cclf = classifier.ComplexClassifier(weights, multiplier=1,
+                                                feature_subset=feature_subset)
+            cclf.set_classifier(classifier.Classifier(
+                train_sample, feature_subset, train_subset))
+            dest_new_X[:, cidx] = np.nan_to_num(cclf.classify(dest_sample.X))
+        return dest_new_X
