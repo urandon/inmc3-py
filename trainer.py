@@ -276,7 +276,7 @@ class FeatureGenerator(object):
         dest_new_X = np.zeros((ndest_samples, ncombos))
         for cidx, (feature_subset, (_, weights)) in enumerate(combinations):
             train_subset = np.nonzero(~np.isnan(
-                train_sample.X[:, feature_subset].any(axis=1)))[0]
+                train_sample.X[:, feature_subset]).any(axis=1))[0]
             cclf = classifier.ComplexClassifier(weights, multiplier=1,
                                                 feature_subset=feature_subset)
             cclf.set_classifier(classifier.Classifier(
