@@ -70,8 +70,9 @@ class Inspector(object):
         # pearson = [self.pearson(k, values) for in xrange(self.n_features)]
         e1, e2 = self.expecteds[np.newaxis], self.eC
         v1, v2 = self.variances, self.varC
-        self.pearson = np.dot((self.sample.y-e2)[np.newaxis], values-e1) /\
-                             (self.n_samples * np.sqrt(v1 * v2))
+        self.pearson = np.dot(
+            (self.sample.y[self.sample_subset]-e2)[np.newaxis], values-e1) /\
+            (self.n_samples * np.sqrt(v1 * v2))
 
     def get_expected_val(self, values):
         return np.nanmean(values)
@@ -92,8 +93,9 @@ class Inspector(object):
         # todo: checks
         e1, e2 = self.get_expected_f(feature), self.eC
         v1, v2 = self.get_variance_feature(feature), self.varC
-        return np.inner(values[:, feature] - e1, self.sample.y - e2) /\
-                       (self.n_samples * np.sqrt(v1 * v2))
+        return np.inner(
+            values[:, feature] - e1, self.sample.y[self.sample_subset] - e2) /\
+            (self.n_samples * np.sqrt(v1 * v2))
 
     def check(self):
         if len(self.feature_subset) > 1:
