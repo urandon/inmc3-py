@@ -274,12 +274,17 @@ class FeatureGenerator(object):
         ncombos = len(combinations)
         ndest_samples = dest_sample.size
         dest_new_X = np.zeros((ndest_samples, ncombos))
+        dest_new_X[:] = np.nan
         for cidx, (feature_subset, (_, weights)) in enumerate(combinations):
             train_subset = np.nonzero(~np.isnan(
                 train_sample.X[:, feature_subset]).any(axis=1))[0]
+            dest_subset = np.nonzero(~np.isnan(
+                dest_sample.X[:, feature_subset]).any(axis=1))[0]
+
             cclf = classifier.ComplexClassifier(weights, multiplier=1,
                                                 feature_subset=feature_subset)
             cclf.set_classifier(classifier.Classifier(
                 train_sample, feature_subset, train_subset))
-            dest_new_X[:, cidx] = np.nan_to_num(cclf.classify(dest_sample.X))
+            dest_new_X[dest_subset, cidx] = np.nan_to_num(
+                cclf.classify(dest_sample.X[dest_subset, :]))
         return dest_new_X
