@@ -37,13 +37,13 @@ class Inspector(object):
         self.feature_subset = feature_subset
         self.n_features = len(feature_subset)
         self.feature_mapping = {sub: idx for (idx, sub)
-                                in enumerate(feature_subset)}
+                                in enumerate(self.feature_subset)}
         self.sample_subset = np.nonzero(
-            ~np.isnan(self.sample.X[:, feature_subset].any(axis=1)))
+            ~np.isnan(self.sample.X[:, feature_subset]).any(axis=1))
         if type(self.sample_subset) is tuple:
             self.sample_subset = self.sample_subset[0]
         self.sample_mapping = {sub: idx for (idx, sub)
-                               in enumerate(feature_subset)}
+                               in enumerate(self.sample_subset)}
         self.n_samples = len(self.sample_subset)
 
         # train totally
