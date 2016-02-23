@@ -165,7 +165,6 @@ class MaxCorrelationTrainer(object):
 
             for iter_idx in xrange(1, n_features):
                 best_prev_func = self.best_functional
-                best_curr_func = self.initial_single_functional
                 new_combinations = storage.TreeStorage(data_handled=False)
                 if force_garbage_collector:
                     self.mapper.gc_collect()
@@ -177,8 +176,6 @@ class MaxCorrelationTrainer(object):
                         continue
                     hist_push(tested)
                     new_combinations.append(combo)
-                    if tested.functional > best_curr_func:
-                        best_curr_func = tested.functional
                     if tested.functional > self.best_functional:
                         self.best_functional = tested.functional
                         best_combination = combo
@@ -187,16 +184,16 @@ class MaxCorrelationTrainer(object):
                     break
                 del combinations
                 combinations = new_combinations
-                log_func(iter_idx+1, best_curr_func)
+                log_func(iter_idx+1, self.best_functional)
                 logger.push('\tcombinations to process: {}'.
                             format(len(combinations)))
 
             # training results
             log_func('_', self.best_functional)
-            logger.push('Best combination: ' + '; '.join(
-                map(str, best_combination)))
-            logger.push('Weights: ' + '; '.join(
-                map(str, best_weights))).flush()
+            logger.push(
+                'Best combination: ' + '; '.join(map(str, best_combination)) +
+                '\nWeights: ' + '; '.join(map(str, best_weights))
+            ).flush()
 
         return self.noncollapsed_combinations
 
