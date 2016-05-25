@@ -2,28 +2,6 @@ import numpy as np
 from . import classifier
 
 
-class IInspectior(object):
-    def error(i): pass
-
-    def discrepancy(i, j): pass
-
-    def variance(i): pass
-
-    def weight(i): pass
-
-    def functional(): pass
-
-    def check(): pass
-
-    def which_is_dominated_clf(cclf1, cclf2): pass
-
-    def which_is_dominated_feature(feature1, feature2): pass
-
-    def __init__(self, weights, clf):
-        self.weights = weights
-        self.clf = clf
-
-
 class Inspector(object):
 
     DETERMINANT_EPS = 1e-30
@@ -57,7 +35,7 @@ class Inspector(object):
         # get stats
         self.expecteds = values.mean(axis=0)
         self.errors = np.square(values - subC).mean(axis=0)
-        self.variances = np.square(values-self.expecteds).mean(axis=0)
+        self.variances = np.square(values - self.expecteds).mean(axis=0)
         self.discrepancies = np.zeros((self.n_features, self.n_features))
 
         tmp = np.square(values).sum(axis=0)[np.newaxis]
@@ -71,8 +49,8 @@ class Inspector(object):
         e1, e2 = self.expecteds[np.newaxis], self.eC
         v1, v2 = self.variances, self.varC
         self.pearson = np.dot(
-            (self.sample.y[self.sample_subset]-e2)[np.newaxis], values-e1) /\
-            (self.n_samples * np.sqrt(v1 * v2))
+            (self.sample.y[self.sample_subset] - e2)[np.newaxis], values - e1)\
+            / (self.n_samples * np.sqrt(v1 * v2))
 
     def get_expected_val(self, values):
         return np.nanmean(values)
@@ -94,8 +72,8 @@ class Inspector(object):
         e1, e2 = self.get_expected_f(feature), self.eC
         v1, v2 = self.get_variance_feature(feature), self.varC
         return np.inner(
-            values[:, feature] - e1, self.sample.y[self.sample_subset] - e2) /\
-            (self.n_samples * np.sqrt(v1 * v2))
+            values[:, feature] - e1, self.sample.y[self.sample_subset] - e2)\
+            / (self.n_samples * np.sqrt(v1 * v2))
 
     def check(self):
         if len(self.feature_subset) > 1:
@@ -122,10 +100,11 @@ class Inspector(object):
 
     def which_is_dominated_clf(self, clf1, clf2):
         v1, v2 = clf1.variance, clf2.variance
-        rho = np.square(clf1.classify_training-clf2.classify_training).mean()
-        if (np.square(v1-v2) - rho * (v1+v2)) == 0:
+        rho = np.square(clf1.classify_training - clf2.classify_training).mean()
+        if (np.square(v1 - v2) - rho * (v1 + v2)) == 0:
             return None  # TODO: what to do?
-        c1 = (v2*v2 - v1*v2 - v2*rho) / (np.square(v1-v2) - rho*(v1+v2))
+        c1 = (v2 * v2 - v1 * v2 - v2 * rho)\
+            / (np.square(v1 - v2) - rho * (v1 + v2))
         if c1 < 0:
             return clf1
         elif c1 > 1:
@@ -164,15 +143,15 @@ class MaxCorrelationInspector(Inspector):
         if subsize == 2:
             v1, v2 = variances
             rho = discrepancies[0, 1]
-            if (np.square(v1-v2) - rho * (v1 + v2) == 0):
+            if (np.square(v1 - v2) - rho * (v1 + v2) == 0):
                 return None  # TODO ???
-            c1 = (v2*v2 - v1*v2 - v2*rho) /\
-                ((v1-v2)*(v1-v2) - rho*(v1+v2))
+            c1 = (v2 * v2 - v1 * v2 - v2 * rho) /\
+                ((v1 - v2) * (v1 - v2) - rho * (v1 + v2))
             if not 0 <= c1 <= 1:
                 return None
-            weights = [c1, 1-c1]
-            functional = (c1 * (v1-v2) + v2) /\
-                np.sqrt((c1 * (v1-v2) + v2 - c1 * (1-c1) * rho) * varC)
+            weights = [c1, 1 - c1]
+            functional = (c1 * (v1 - v2) + v2) /\
+                np.sqrt((c1 * (v1 - v2) + v2 - c1 * (1 - c1) * rho) * varC)
         else:
             # phi = lambda idx: beta * DI[i] - gamma * DE[i]
             # psi = lambda idx: beta * DE[i] - alpha * DI[i]
@@ -183,7 +162,7 @@ class MaxCorrelationInspector(Inspector):
             self.beta = beta = np.sum(DE)
             self.gamma = gamma = np.sum(DI)
 
-            cs = beta*beta - alpha*gamma
+            cs = beta * beta - alpha * gamma
 
             # bounds
             if cs == 0:
@@ -210,7 +189,7 @@ class MaxCorrelationInspector(Inspector):
 
             def K(theta):
                 return theta / np.sqrt(
-                    varC * (theta - B0 - B1*theta - B2*theta*theta))
+                    varC * (theta - B0 - B1 * theta - B2 * theta * theta))
 
             theta = (2 * B0) / (1 - B1)
 
