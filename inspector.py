@@ -129,7 +129,7 @@ class MaxCorrelationInspector(Inspector):
         super(MaxCorrelationInspector, self).__init__(sample, feature_subset)
         self.alpha, self.beta, self.gamma = [np.double() for x in xrange(3)]
         self.cs = np.double()
-        self.B0, self.B1, self.B2 = [np.double() for x in xrange(3)]
+        self.B0, self.B1, self.B2 = [None for x in xrange(3)]
         self.sample, self.subset = sample, feature_subset
 
     def subset_weights(self, reversed_):
@@ -186,6 +186,7 @@ class MaxCorrelationInspector(Inspector):
             B2 = phi_.dot(discrepancies).dot(phi_) / norm_by
             B1 = (psi_.dot(discrepancies).dot(phi_) +
                   phi_.dot(discrepancies).dot(psi_)) / norm_by
+            self.B0, self.B1, self.B2 = B0, B1, B2
 
             def K(theta):
                 return theta / np.sqrt(
