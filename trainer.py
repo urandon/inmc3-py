@@ -27,7 +27,7 @@ class MaxCorrelationTrainer(object):
     epsilon = 1e-4
 
     def __init__(self, voting_quality_threshold=1e-3,
-                 comparision_threshold=1-1e-2,
+                 comparision_threshold=(1 - 1e2),
                  filtering_type='domination',
                  combining_type='mnk',
                  skip_selection=False, logger=utils.PrintLogger(),
@@ -184,7 +184,7 @@ class MaxCorrelationTrainer(object):
                     break
                 del combinations
                 combinations = new_combinations
-                log_func(iter_idx+1, self.best_functional)
+                log_func(iter_idx + 1, self.best_functional)
                 logger.push('\tcombinations to process: {}'.
                             format(len(combinations)))
 
@@ -256,7 +256,7 @@ class MaxCorrelationTrainer(object):
 
         [[var_result, cov], [_, var_C]] = \
             np.cov(y_test_predicted[res_accepted], y_test[res_accepted])
-        deviation = np.square((y_test-y_test_predicted)[res_accepted]).sum()
+        deviation = np.square((y_test - y_test_predicted)[res_accepted]).sum()
 
         stats = utils.Struct(error=error, class_errors=class_errors,
                              cov=cov, deviation=deviation,

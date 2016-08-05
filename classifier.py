@@ -96,7 +96,7 @@ class ComplexClassifier(object):
         if feature_subset is None:
             raise ValueError('feature subset must be specified')
         self.feature_subset = feature_subset
-        self.n_samles, self.n_features = 0, 0
+        self.n_samples, self.n_features = 0, 0
         self.alpha, self.beta, self.variance =\
             (np.double(0) for x in xrange(3))
         self.error = np.inf
@@ -112,7 +112,7 @@ class ComplexClassifier(object):
         X_ = self._raw_classify_training_all()
         y_ = self.clf.y_sub()
         predicted = self.alpha * X_ + self.beta
-        self.error = np.mean(np.square(predicted-y_))
+        self.error = np.mean(np.square(predicted - y_))
         self.variance = np.var(predicted)
 
     def _find_alpha_beta(self):
@@ -128,7 +128,7 @@ class ComplexClassifier(object):
         x2 = np.sum(np.square(X_), axis=0)
         y = np.sum(y_)
 
-        alpha = (xy - x*y / nonnan_cnt) / (x2 - x*x / nonnan_cnt)
+        alpha = (xy - x * y / nonnan_cnt) / (x2 - x * x / nonnan_cnt)
         beta = (y - alpha * x) / nonnan_cnt
         return alpha, beta
 

@@ -152,6 +152,9 @@ class MaxCorrelationInspector(Inspector):
             weights = [c1, 1 - c1]
             functional = (c1 * (v1 - v2) + v2) /\
                 np.sqrt((c1 * (v1 - v2) + v2 - c1 * (1 - c1) * rho) * varC)
+            # theta = -2*v1*v2*rho / ((v1-v2)**2 - rho * (v1+v2))
+            # functional = (theta/sqrt(varC)) /\
+            #   np.sqrt(theta + rho * (theta-v2) * (theta-v1) / (v1-v2) ** 2)
         else:
             # phi = lambda idx: beta * PSI[i] - gamma * PHI[i]
             # psi = lambda idx: beta * PHI[i] - alpha * PSI[i]
