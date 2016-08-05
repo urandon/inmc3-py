@@ -153,22 +153,22 @@ class MaxCorrelationInspector(Inspector):
             functional = (c1 * (v1 - v2) + v2) /\
                 np.sqrt((c1 * (v1 - v2) + v2 - c1 * (1 - c1) * rho) * varC)
         else:
-            # phi = lambda idx: beta * DI[i] - gamma * DE[i]
-            # psi = lambda idx: beta * DE[i] - alpha * DI[i]
-            DI = np.sum(reversed_, axis=1)
-            DE = reversed_.dot(variances)
+            # phi = lambda idx: beta * PSI[i] - gamma * PHI[i]
+            # psi = lambda idx: beta * PHI[i] - alpha * PSI[i]
+            PSI = np.sum(reversed_, axis=1)  # refers to PSI in article
+            PHI = reversed_.dot(variances)   # refers to PHI in article
 
-            self.alpha = alpha = np.inner(variances, DE)
-            self.beta = beta = np.sum(DE)
-            self.gamma = gamma = np.sum(DI)
+            self.alpha = alpha = np.inner(variances, PHI)
+            self.beta = beta = np.sum(PHI)
+            self.gamma = gamma = np.sum(PSI)
 
             cs = beta * beta - alpha * gamma
 
             # bounds
             if cs == 0:
                 return None
-            phi_ = beta * DI - gamma * DE
-            psi_ = beta * DE - alpha * DI
+            phi_ = beta * PSI - gamma * PHI     # refers to Gamma1/cs
+            psi_ = beta * PHI - alpha * PSI     # refers to Gamma0/cs
             val = -psi_ / phi_
             div = phi_
             if cs > 0:
@@ -188,9 +188,9 @@ class MaxCorrelationInspector(Inspector):
                   phi_.dot(discrepancies).dot(psi_)) / norm_by
             self.B0, self.B1, self.B2 = B0, B1, B2
 
-            def K(theta):
-                return theta / np.sqrt(
-                    varC * (theta - B0 - B1 * theta - B2 * theta * theta))
+            def corr(theta):
+                Q_2 = B0 + B1 * theta + B2 * theta * theta
+                return theta / np.sqrt(varC * (theta - Q_2))
 
             theta = (2 * B0) / (1 - B1)
 
@@ -198,13 +198,13 @@ class MaxCorrelationInspector(Inspector):
             best_theta = None
 
             # check borders
-            for testK, val in ((K(val), val) for val in (left, right)):
+            for testK, val in ((corr(val), val) for val in (left, right)):
                 if testK > functional:
                     functional, best_theta = testK, val
 
             # check range
             if left < theta < right:
-                testK = K(theta)
+                testK = corr(theta)
                 if testK > functional:
                     functional, best_theta = testK, theta
 
