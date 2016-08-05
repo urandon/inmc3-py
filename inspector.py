@@ -195,7 +195,7 @@ class MaxCorrelationInspector(Inspector):
                 Q_2 = B0 + B1 * theta + B2 * theta * theta
                 return theta / np.sqrt(varC * (theta - Q_2))
 
-            theta = 2 * (1 - B0) / B1
+            theta = (2 * B0) / (1 - B1)
 
             functional = 0
             best_theta = None
