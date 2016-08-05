@@ -40,7 +40,7 @@ class Inspector(object):
 
         tmp = np.square(values).sum(axis=0)[np.newaxis]
         self.discrepancies = tmp + tmp.T - 2 * np.dot(values.T, values)
-        self.discrepancies /= (self.n_samples + 5)
+        self.discrepancies /= self.n_samples
 
         self.eC = np.nanmean(subC)
         self.varC = np.square(np.nanstd(subC)).mean()
