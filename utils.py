@@ -30,6 +30,7 @@ class Sample(object):
     def copy(self):
         return Sample(self.X.copy(), self.y.copy())
 
+# Loggers
 
 class NullLogger(object):
     def __init__(self):
@@ -75,62 +76,89 @@ class FileLogger(NullLogger):
     def __del__(self):
         self.fo.close()
 
+# Mappers
 
-class Mapper(object):
+class DummyMapperImpl(object):
+    def __init__(self, parallel_profile=None):
+        pass
+
+    def map(self, *args, **kwargs):
+        return map(*args, **kwargs)
+
+    def imap(self, *args, **kwargs):
+        return itertools.imap(*args, **kwargs)
+
+    def gc_collect(self):
+        gc_collect()
+
+    def push(self, **kwargs):
+        pass
+
+
+class PoolMapperImpl(DummyMapperImpl):
+    def __init__(self, n_threads):
+        from multiprocessing.pool import ThreadPool
+        self.n_threads = n_threads
+        self.pool = ThreadPool(processes=self.n_processes)
+        self.pool._maxtasksperchild = 10**5
+        logger.push('Running parallel in {} threads'.
+                    format(self.n_threads))
+
+    def imap(self, *args, **kwargs):
+        return self.pool.imap(*args, **kwargs)
+
+    def map(self, *args, **kwargs):
+        return self.pool.map(*args, **kwargs)
+
+
+class IPyClusterMapperImpl(DummyMapperImpl):
+    def __init__(self, parallel_profile):
+        from ipyparallel import Client
+        self.rc = Client(profile=parallel_profile)
+        self.dv = self.rc.direct_view()
+        self.lbv = self.rc.load_balanced_view()
+        with self.db.sync_imports():
+            import sys
+        self.dv['sys.path'] = sys.path
+        with self.dv.sync_imports():
+            from . import trainer, inspector, classifier, storage
+        logger.push('Running parallel on cluster with {} nodes'.
+                    format(len(self.dv)))
+
+    def map(self, *args, **kwargs):
+        return self.dv.map_sync(*args, **kwargs)
+
+    def imap(self, *args, **kwargs):
+        return self.dv.imap(*args, **kwargs)
+
+    def gc_collect(self):
+        self.dv.apply(gc_collect)
+
+    def push(self, **kwargs):
+        self.dv.push(kwargs)
+
+
+class Mapper(object): # Mapper Factory and Strategy
     def __init__(self, parallel_profile=None):
         self._parallel_profile = parallel_profile
         if parallel_profile is None:
-            pass
-        elif str.startswith(parallel_profile, 'threads-'):
-            from multiprocessing.pool import ThreadPool
-            self.n_threads = int(parallel_profile[len('threads-'):])
-            self.pool = ThreadPool(processes=self.n_threads)
-            self.pool._maxtasksperchild = 10**5
-            logger.push('Running parallel in {} threads'.
-                        format(self.n_threads))
+            self._impl = DummyMapperImpl()
+        elif parallel_profile.startswith('threads-'):
+            n_threads = int(parallel_profile[len('threads-'):])
+            self._impl = PoolMapperImpl(n_threads):
         else:
-            from ipyparallel import Client
-            self.rc = Client(profile=parallel_profile)
-            self.dv = self.rc.direct_view()
-            self.lbv = self.rc.load_balanced_view()
-            with self.dv.sync_imports():
-                import sys
-            self.dv['path'] = sys.path
-            with self.dv.sync_imports():
-                from . import trainer, inspector, classifier, storage
-            logger.push('Running parallel on cluster on {} cores'.format(
-                        len(self.dv)))
+            self._impl = IPyClusterMapperImpl(parallel_profile)
 
-    def imap(self):
-        if self._parallel_profile is None:
-            return itertools.map
-        elif str.startswith(self._parallel_profile, 'threads-'):
-            return self.pool.imap
-        else:
-            return self.dv.imap
+    def map(self, *args, **kwargs):
+        self._impl(*args, **kwargs):
 
-    def map(self):
-        if self._parallel_profile is None:
-            return map
-        elif str.startswith(self._parallel_profile, 'threads-'):
-            return self.pool.map
-        else:
-            return self.dv.map_sync
+    def imap(self, *args, **kwargs):
+        self._impl(*args, **kwargs):
 
     def gc_collect(self):
-        if self._parallel_profile is None:
-            gc_collect()
-        elif str.startswith(self._parallel_profile, 'threads-'):
-            gc_collect()
-        else:
-            self.dv.apply(gc_collect)
+        self._impl.gc_collect()
 
-    def push(self, **kwargs):
-        if self._parallel_profile is None:
-            pass
-        elif str.startswith(self._parallel_profile, 'threads-'):
-            pass
-        else:
-            self.dv.push(kwargs)
+    def push(self, *args, **kwargs):
+        self._impl(*args, **kwargs)
 
 logger = PrintLogger()
