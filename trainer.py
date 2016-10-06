@@ -130,8 +130,8 @@ class MaxCorrelationTrainer(object):
             self.best_functional = self.initial_combinations_functional(
                 self.best_functional)
 
-            pmap = self.mapper.imap() if self.iterable_map\
-                else self.mapper.map()
+            pmap = self.mapper.imap if self.iterable_map\
+                else self.mapper.map
             self.mapper.push(sample=sample.copy())
 
             for first in xrange(n_features):
