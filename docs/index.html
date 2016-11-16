@@ -1,41 +1,40 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title> Выпуклые комбинации </title>
+        <title> Выпуклые комбинации </title>
 
-		<link rel="stylesheet" href="http://lab.hakim.se/reveal-js/css/reveal.css">
-		<link rel="stylesheet" href="http://lab.hakim.se/reveal-js/css/theme/black.css">
+        <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/css/reveal.css">
+        <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/css/theme/black.css">
 
-		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="http://lab.hakim.se/reveal-js/lib/css/zenburn.css">
+        <!-- Theme used for syntax highlighting of code -->
+        <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/lib/css/zenburn.css">
 
-		<!-- Printing and PDF exports -->
-		<script>
-			var link = document.createElement( 'link' );
-			link.rel = 'stylesheet';
-			link.type = 'text/css';
-			link.href = window.location.search.match( /print-pdf/gi ) ? 'http://lab.hakim.se/reveal-js/css/print/pdf.css' : 'http://lab.hakim.se/reveal-js/css/print/paper.css';
-			document.getElementsByTagName( 'head' )[0].appendChild( link );
-		</script>
-	</head>
-	<body>
-		<!-- Slides are here -->
+        <!-- Printing and PDF exports -->
+        <script>
+            var link = document.createElement( 'link' );
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = window.location.search.match( /print-pdf/gi ) ? 'http://lab.hakim.se/reveal-js/css/print/pdf.css' : 'http://lab.hakim.se/reveal-js/css/print/paper.css';
+            document.getElementsByTagName( 'head' )[0].appendChild( link );
+        </script>
+    </head>
+    <body>
+        <!-- Slides are here -->
         <!-- TODO: *add reference to Senko & Dokukin paper
                    *add reference to https://github.com/urandon/inmc3-py -->
-		<div class="reveal">
-			<div class="slides">
-				<section>
-					<h2> Регрессионная модель, основанная на выпуклых комбинациях,
-                     максимально коррелирующих с откликом </h2>
-					<h3> Хомутов Никита </h3> 
-					<small>
-						<p> ВМК МГУ </p>
-						<p> Москва, 2016 </p>
-					</small>
-				</section>
+        <div class="reveal">
+            <div class="slides">
+                <section>
+                    <h2> Regression Model Based on Maximally Response Correlated Convex Combinations </h2>
+                    <h3> Khomutov Nikita </h3> 
+                    <small>
+                        <p> CMC MSU </p>
+                        <p> Moscow, 2016 </p>
+                    </small>
+                </section>
 
                 <section>
                     TODO
@@ -44,40 +43,40 @@
                 <!-- Links -->
                 <section>
                     <section>
-                        <p><h2>GitHub repo</h2></p>
+                        <p><h2>GitHub</h2></p>
                         <img src="http://i.imgur.com/7XPpKHS.png" style="background:none; box-shadow:none;">
-                        <p>github.com/urandon/inmc3-py</p>
+                        <p><a href="https://github.com/urandon/inmc3-py"></a>urandon/inmc3-py</p>
                     </section>
                 </section>
 
-			</div>
-		</div>
+            </div>
+        </div>
 
-		<!-- Imports -->
-		<script src="http://lab.hakim.se/reveal-js/lib/js/head.min.js"></script>
-		<script src="http://lab.hakim.se/reveal-js/js/reveal.js"></script>
+        <!-- Imports -->
+        <script src="http://lab.hakim.se/reveal-js/lib/js/head.min.js"></script>
+        <script src="http://lab.hakim.se/reveal-js/js/reveal.js"></script>
 
-		<script>
-			// More info https://github.com/hakimel/reveal.js#configuration
-			Reveal.initialize({
-				history: true,
+        <script>
+            // More info https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                history: true,
 
-				    math: {
-				        mathjax: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js',
-				        config: 'TeX-AMS_HTML-full'  // See http://docs.mathjax.org/en/latest/config-files.html
-				    },
+                    math: {
+                        mathjax: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js',
+                        config: 'TeX-AMS_HTML-full'  // See http://docs.mathjax.org/en/latest/config-files.html
+                    },
 
-				// More info https://github.com/hakimel/reveal.js#dependencies
-				dependencies: [
-				    { src: 'http://lab.hakim.se/reveal-js/socket.io/socket.io.js', async: true },
-				    { src: 'http://lab.hakim.se/reveal-js/plugin/notes-server/client.js', async: true },
-					{ src: 'http://lab.hakim.se/reveal-js/plugin/math/math.js', async: true },
-					{ src: 'http://lab.hakim.se/reveal-js/plugin/markdown/marked.js' },
-					{ src: 'http://lab.hakim.se/reveal-js/plugin/markdown/markdown.js' },
-					{ src: 'http://lab.hakim.se/reveal-js/plugin/notes/notes.js', async: true },
-					{ src: 'http://lab.hakim.se/reveal-js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
-				]
-			});
-		</script>
-	</body>
+                // More info https://github.com/hakimel/reveal.js#dependencies
+                dependencies: [
+                    { src: 'http://lab.hakim.se/reveal-js/socket.io/socket.io.js', async: true },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/notes-server/client.js', async: true },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/math/math.js', async: true },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/markdown/marked.js' },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/markdown/markdown.js' },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/notes/notes.js', async: true },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+                ]
+            });
+        </script>
+    </body>
 </html>
