@@ -145,15 +145,15 @@ class Mapper(object): # Mapper Factory and Strategy
             self._impl = DummyMapperImpl()
         elif parallel_profile.startswith('threads-'):
             n_threads = int(parallel_profile[len('threads-'):])
-            self._impl = PoolMapperImpl(n_threads):
+            self._impl = PoolMapperImpl(n_threads)
         else:
             self._impl = IPyClusterMapperImpl(parallel_profile)
 
     def map(self, *args, **kwargs):
-        self._impl(*args, **kwargs):
+        self._impl(*args, **kwargs)
 
     def imap(self, *args, **kwargs):
-        self._impl(*args, **kwargs):
+        self._impl(*args, **kwargs)
 
     def gc_collect(self):
         self._impl.gc_collect()
