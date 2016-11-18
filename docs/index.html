@@ -141,11 +141,29 @@
                             \beta_i = 0 &\qquad else \nonumber
                         \end{aligned}
                         \end{eqnarray}
+                        <p class="fragment fade-up"> We found that a method can be used for feature selection </p>
+                    </section>
+                    <section>
+                        <h3> Finding the best combination </h3>
+                        $$ K(\tilde{R}(\mathbf{c}), Y) \to \max_{\mathbf{c}} $$
+                        <p> It was shown that the best combintion is <i> non-extensible </i> and <i> non-compressible </i>, i.e. no feature can be added with correlation growth or no feature can be removed without </p>
+                        <p class="fragment fade-up"> Compressibility test was developed  </p>
+                        <p class="fragment fade-up"> Was developed a method of finding optimal weights in case if weight for all features are non-zero at optimum </p>
+
+                        <p class="fragment fade-up"> Combining these two methods we can find optimal weigths in common case. </p>
+                    </section>
+                    <section>
+                        <p> Starting from valid (with nonzero opimal weights) two-feature combinations we add features and test combination for compressibility. If it compressible, it is thrown away. Else it will be used to build extended combinations </p>
+                        <p> We repeat the procedure increasing the number of features with nonzero weights in combination. Until deadlock will be found </p>
+                        <p> Then be have a list of all deadlocked combinations with nonzero weights. Better correlated to $Y$ is the final optimum </p>
+                    </section>
+                        
                     </section>
                 </section>
 
                 <section>
-                    TODO
+                    <h2> TODO </h2>
+                    
                 </section>
 
                 <!-- Links -->
