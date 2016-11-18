@@ -157,13 +157,26 @@
                         <p> We repeat the procedure increasing the number of features with nonzero weights in combination. Until deadlock will be found </p>
                         <p> Then be have a list of all deadlocked combinations with nonzero weights. Better correlated to $Y$ is the final optimum </p>
                     </section>
-                        
-                    </section>
                 </section>
 
                 <section>
-                    <h2> TODO </h2>
-                    
+                    <h2> Expetiments </h2>
+                    <p> Senko & Dokukin compared the method to ElasticNet (glmnet) on syntethic problem. Noise-sensivity and ability to drop features that are independent to response were researched. </p>
+                    <p>
+                    <ul>
+                    <li> Result show that convex regression (our method) forecastibility is close to ElasticNet </li>
+                    <li> Convex regression show better noize-insensivity than ElasticNet </li>
+                    <li> Small datasets was better modelled by convex regression than by ElasticNet </li></ul></p>
+
+                </section>
+
+                <section>
+                    <h2> Future work </h2>
+                    <ul>
+                        <li> Research feature selection capabilities in bagging and boosting over decision trees. Each tree output is undermided as second-level feature </li>
+                        <li> Research capabilities of deadlocked combinations as feature generation </li>
+                        <li> Research capabilities of multilayer stacking with conbination of SWS method </li>
+                    </ul>
                 </section>
 
                 <!-- Links -->
