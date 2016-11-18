@@ -100,14 +100,24 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <p class="fragment fade-up"> Consider another way to introduce regularization
+                    </section>
+                    <section>
+                        <p> Consider another way to introduce regularization based on restrictions
                         \begin{eqnarray}
                             C_1(\beta_0, \dots, \beta_n) \geq 0 \\
                             \cdots \\
                             C_k(\beta_0, \dots, \beta_n) \geq 0 \nonumber
                         \end{eqnarray}
                         </p>
-                        
+                        <p class="fragment fade-up"> Our method regulatization
+                        \begin{eqnarray}
+                        \begin{aligned}
+                            \beta_i K(Y, X_i) \geq 0 &\qquad if \, \rho(Y, X_i) \neq 0 \\
+                            \beta_i = 0 &\qquad else \nonumber                        
+                        \end{aligned}
+                        \end{eqnarray}
+                        The sign of weight coefficient $\beta_i$ of variable $X_i$ is required to be the same as correlation $K(Y, X_i)$ have
+                        </p>
 
                     </section>
                 </section>
