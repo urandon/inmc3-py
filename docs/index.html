@@ -35,9 +35,26 @@
                 </section>
 
                 <section>
-                    <h2> Ensembles </h2>
+                    <h2> Algorithm Ensembles </h2>
                     <p>The usage of different forecasting/recognition methods and training on different training sets and freature subsets allow us to build some forecasting/recognition algorithms $A_1, \dots, A_r$. </p>
-                    <p class="fragment fade-up"> We can try to increase generalization power by selecting an algorithm with minimal error </p>
+                    <p class="fragment fade-up"> We can try to increase generalization power by selecting an algorithm with minimal error.
+                    However, the most effective result often can be acheived by using all the algorithms $A_1, \dots, A_r$ </p>
+                    <p class="fragment fade-up"> The usage of an ensemble of algorithms which are based on different models allow us to take advantage of their different extrapolation principles </p>
+                </section>
+
+                <section>
+                    <section>
+                        <h2> Convex combinations </h2>
+                        <p>The usage of an ensemble can be statistically rationalized by performing convex combination error analysis </p>
+                        <p> Let suppose that algorithms $A_1, \dots, A_r$ forecast the value of variable $Y$ </p>
+                        <p class="fragment fade-up"> Let $f_i$ is a forecast computed by $A_i$. Then
+                        $$ \Delta_i = E_\Omega (Y-f_i)^2 $$
+                        is an expectation of square error for $A_i$ </p>
+                        <p class="fragment fade-up"> Let $\rho_{ij}$ be expectation of square deviation for forecasts of $A_i$ and $A_j$
+                        $$ \rho_{ij} = E_\Omega (f_i - f_j)^2 $$
+                        We'll call it later as <q> "distance" </q> </p>
+                    </section>
+
 
                 </section>
 
@@ -58,7 +75,7 @@
                     <section>
                         <p><h2>GitHub</h2></p>
                         <img src="http://i.imgur.com/7XPpKHS.png" style="background:none; box-shadow:none; image-rendering: pixelated;" width="50%" height="50%">
-                        <p><a href="https://github.com/urandon/inmc3-py"></a>urandon/inmc3-py</p>
+                        <p><a href="https://github.com/urandon/inmc3-py" style="color:gainsboro">urandon/inmc3-py</a></p>
                     </section>
                 </section>
 
