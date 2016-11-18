@@ -34,6 +34,7 @@
                     </small>
                 </section>
 
+                <!-- Ensembles -->
                 <section>
                     <h2> Algorithm Ensembles </h2>
                     <p>The usage of different forecasting/recognition methods and training on different training sets and freature subsets allow us to build some forecasting/recognition algorithms $A_1, \dots, A_r$. </p>
@@ -42,6 +43,7 @@
                     <p class="fragment fade-up"> The usage of an ensemble of algorithms which are based on different models allow us to take advantage of their different extrapolation principles </p>
                 </section>
 
+                <!-- Convex -->
                 <section>
                     <section>
                         <h2> Convex combinations </h2>
@@ -70,7 +72,38 @@
                         <p class="fragment fade-up"> In other words, the expectation of convex combination square error always does not exceed corresponding convex combination of individual ensenble algorithms square errors </p>
                         <p class="fragment fade-up"> Additionally, the higher distance $\rho_{ij}$ increases the difference in inequality. That's why algorithms based on different principles are effective together </p>
                     </section>
+                </section>
 
+                <!-- Linreg -->
+                <section>
+                    <section>                    
+                        <h2> Linear Regression </h2>
+                        <p class="fragment fade-up"> Consider conventional problem of multidimensional regressional analysis. The variable $Y$ is predicted on variables $X_1, \dots, X_n$ by linear regression 
+                        $$ \beta_0 + \sum_{i=1}^n \beta_i X_i $$ </p>
+                        <p class="fragment fade-up"> Popular methods solve the problem
+                        $$ \min_{\beta \in \mathbb{R}^{n+1}} \left\{ \sum_{j=1}^n \left( y_j - \beta_0 - \sum_{i=1}^n \beta_i x_{ij} \right)^2 + P(\beta) \right\} $$ 
+                        with regularizing penalty term $P(\beta)$
+                        </p>
+                    </section>
+                    <section>
+                        <table>
+                            <thead>
+                                <tr><th>Method</th> <th>Penalty</th> </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="fragment fade-up">
+                                    <th>Lasso</th> <th>$\sum_{i=1}^n |\beta_i|$</th>
+                                </tr>
+                                <tr class="fragment fade-up">
+                                    <th>Ridge regression</th> <th>$\sum_{i=1}^n \beta_i^2$</th>
+                                </tr>
+                                <tr class="fragment fade-up">
+                                    <th>ElasticNet</th> <th> $(1-\alpha) \sum_{i=1}^n \beta_i^2 + \alpha\sum_{i=1}^n |\beta_i|$</th>
+                                </tr>
+                            </tbody>                            
+                        </table>
+
+                    </section>
                 </section>
 
                 <section>
