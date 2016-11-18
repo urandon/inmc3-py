@@ -55,6 +55,21 @@
                         We'll call it later as <q> "distance" </q> </p>
                     </section>
 
+                    <section>
+                        <p> Let $c_1, \dots, c_r$ be positive coefficients that sums to $1$. Denote convex combitaion of forecasts of $A_1, \dots, A_r$ as $\hat{f}$, i.e.
+                        $$ \hat{f} = \sum_{i=1}^{r} c_i f_i \qquad \sum_{i=1}^r c_i = 1 $$ </p>
+                        <p class="fragment fade-up"> It can be shown that the error of a convex combination is
+                        $$ \hat{\Delta} = E_\Omega(Y-\hat{f})^2 = \sum_{i=1}^r c_i \Delta_i - \frac12 \sum_{i=1}^r \sum_{j=1}^r c_i c_j \rho_{ij} $$ </p>
+                    </section>
+
+                    <section>
+                        <p> Convex combination error
+                        $$ \hat{\Delta} = E_\Omega(Y-\hat{f})^2 = \sum_{i=1}^r c_i \Delta_i - \frac12 \sum_{i=1}^r \sum_{j=1}^r c_i c_j \rho_{ij} $$ </p>
+                        <p class="fragment fade-up"> Pay attention to $\rho_{ij}$ non-negativity and $c_i$ posivity:
+                        $$ \hat{\Delta} \leq \sum_{i=1}^r c_i \Delta_i $$ </p>
+                        <p class="fragment fade-up"> In other words, the expectation of convex combination square error always does not exceed corresponding convex combination of individual ensenble algorithms square errors </p>
+                        <p class="fragment fade-up"> Additionally, the higher distance $\rho_{ij}$ increases the difference in inequality. That's why algorithms based on different principles are effective together </p>
+                    </section>
 
                 </section>
 
