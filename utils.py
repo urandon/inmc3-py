@@ -99,7 +99,7 @@ class PoolMapperImpl(DummyMapperImpl):
     def __init__(self, n_threads):
         from multiprocessing.pool import ThreadPool
         self.n_threads = n_threads
-        self.pool = ThreadPool(processes=self.n_processes)
+        self.pool = ThreadPool(processes=self.n_threads)
         self.pool._maxtasksperchild = 10**5
         logger.push('Running parallel in {} threads'.
                     format(self.n_threads))
@@ -150,15 +150,15 @@ class Mapper(object): # Mapper Factory and Strategy
             self._impl = IPyClusterMapperImpl(parallel_profile)
 
     def map(self, *args, **kwargs):
-        self._impl(*args, **kwargs)
+        return self._impl.map(*args, **kwargs)
 
     def imap(self, *args, **kwargs):
-        self._impl(*args, **kwargs)
+        return self._impl.imap(*args, **kwargs)
 
     def gc_collect(self):
         self._impl.gc_collect()
 
     def push(self, *args, **kwargs):
-        self._impl(*args, **kwargs)
+        self._impl.push(*args, **kwargs)
 
 logger = PrintLogger()
