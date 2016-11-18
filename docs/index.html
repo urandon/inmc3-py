@@ -116,9 +116,31 @@
                             \beta_i = 0 &\qquad else \nonumber                        
                         \end{aligned}
                         \end{eqnarray}
-                        The sign of weight coefficient $\beta_i$ of variable $X_i$ is required to be the same as correlation $K(Y, X_i)$ have
+                        The sign of weight coefficient $\beta_i$ of variable $X_i$ is required to be the same as correlation coefficient $K(Y, X_i)$ have
                         </p>
+                    </section>
+                </section>
 
+                <section>
+                    <section>
+                        <h2> Our method </h2>
+                        <p class="fragment fade-up"> Build 1D linear regressions $R_1, \dots, R_n$. $R_i$ is trained using ordinary least squares on sample $(Y, X_i)$ 
+                        $$ R_i = \beta_0^{ui} + \beta_1^{ui} X_i $$
+                        </p>
+                        <p class="fragment fade-up"> Build convex combination of $R_1, \dots, R_n$ that maximizes correlation to $Y$
+                        $$ \tilde{R}(\mathbf{c}) = \sum_{i=1}^n c_i R_i \qquad K(\tilde{R}(\mathbf{c}), Y) \to \max_{\mathbf{c}} $$ </p>
+                        <p class="fragment fade-up"> Build 1D linear regression
+                        $$ \bar{R} = \beta_0^c + \beta_1^c \tilde{R}(\mathbf{c_{opt}}) $$ </p>
+                        </ul>
+                    </section>
+                    <section>
+                        It can be showh that the desctibed method builds linear regression with weight sign restriction. It should be the same as correlation sign
+                        \begin{eqnarray}
+                        \begin{aligned}
+                            \beta_i K(Y, X_i) \geq 0 &\qquad if \, \rho(Y, X_i) \neq 0 \\
+                            \beta_i = 0 &\qquad else \nonumber
+                        \end{aligned}
+                        \end{eqnarray}
                     </section>
                 </section>
 
