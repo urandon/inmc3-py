@@ -3,6 +3,7 @@ Different useful functions, classes, methods are there
 '''
 
 import itertools
+import numpy as np
 
 
 def gc_collect():
@@ -26,6 +27,13 @@ class Sample(object):
         self.X.flags.writeable = False
         self.y.flags.writeable = False
         self.size, self.n_features = X.shape
+
+        self.cachable = not self.has_missing_values()
+        if self.cachable:
+            self.cache = None
+
+    def has_missing_values(self):
+        return np.isnan(self.X).any() or np.isnan(self.y).any()
 
     def copy(self):
         return Sample(self.X.copy(), self.y.copy())
@@ -162,5 +170,6 @@ class Mapper(object):
 
     def push(self, *args, **kwargs):
         self._impl.push(*args, **kwargs)
+
 
 logger = PrintLogger()

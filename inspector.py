@@ -44,15 +44,28 @@ class Inspector(object):
     DETERMINANT_EPS = 1e-30
 
     def __init__(self, sample, feature_subset):
+        if sample.cachable:
+            if sample.cache is None:
+                sample.cache = DatasetInspectorStatsHolder(sample)
+            self.expecteds = sample.cache.expecteds[feature_subset]
+            self.variances = sample.cache.variances[feature_subset]
+            self.discrepancies = sample.cache.discrepancies[feature_subset, :][:, feature_subset]
+            self.varC = sample.cache.varC
+            self.pearson = sample.cache.pearson[:, feature_subset]
+
+            self.n_features = len(feature_subset)
+        else:
+            self._init_noncached(sample, feature_subset)
+
+    def _init_noncached(self, sample, feature_subset):
         self.pearson = [None]
         self.weights = [None]
         self.functional = None
 
-        self.sample = sample
         self.feature_subset = feature_subset
         self.n_features = len(feature_subset)
         self.sample_subset = np.nonzero(
-            ~np.isnan(self.sample.X[:, feature_subset]).any(axis=1))
+            ~np.isnan(sample.X[:, feature_subset]).any(axis=1))
         if type(self.sample_subset) is tuple:
             self.sample_subset = self.sample_subset[0]
         self.n_samples = len(self.sample_subset)
@@ -81,11 +94,11 @@ class Inspector(object):
         e1, e2 = self.expecteds[np.newaxis], self.eC
         v1, v2 = self.variances, self.varC
         self.pearson = np.dot(
-            (self.sample.y[self.sample_subset] - e2)[np.newaxis], values - e1)\
+            (sample.y[self.sample_subset] - e2)[np.newaxis], values - e1)\
             / (self.n_samples * np.sqrt(v1 * v2))
 
     def check(self):
-        if len(self.feature_subset) > 1:
+        if self.n_features > 1:
             try:
                 if np.abs(np.linalg.det(self.discrepancies))\
                         < self.DETERMINANT_EPS:
@@ -118,17 +131,16 @@ class MaxCorrelationInspector(Inspector):
         self.alpha, self.beta, self.gamma = [np.double() for x in xrange(3)]
         self.cs = np.double()
         self.B0, self.B1, self.B2 = [None for x in xrange(3)]
-        self.sample, self.subset = sample, feature_subset
+        self.subset = feature_subset
 
     def subset_weights(self, reversed_):
-        subsize = len(self.feature_subset)
-        weights = [np.double() for x in xrange(subsize)]
+        weights = [np.double() for x in xrange(self.n_features)]
         functional = None
         varC = self.varC
         discrepancies = self.discrepancies
         variances = self.variances
 
-        if subsize == 2:
+        if self.n_features == 2:
             v1, v2 = variances
             rho = discrepancies[0, 1]
             if (np.square(v1 - v2) - rho * (v1 + v2) == 0):
