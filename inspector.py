@@ -47,6 +47,8 @@ class Inspector(object):
         if sample.cachable:
             if sample.cache is None:
                 sample.cache = DatasetInspectorStatsHolder(sample)
+            if isinstance(feature_subset, tuple):
+                feature_subset = np.array(feature_subset)
             self.expecteds = sample.cache.expecteds[feature_subset]
             self.variances = sample.cache.variances[feature_subset]
             self.discrepancies = sample.cache.discrepancies[feature_subset, :][:, feature_subset]
