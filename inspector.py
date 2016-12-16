@@ -54,6 +54,7 @@ class Inspector(object):
             self.pearson = sample.cache.pearson[:, feature_subset]
 
             self.n_features = len(feature_subset)
+            self.feature_subset = feature_subset
         else:
             self._init_noncached(sample, feature_subset)
 
