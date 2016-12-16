@@ -2,6 +2,43 @@ import numpy as np
 from . import classifier
 
 
+class DatasetInspectorStatsHolder(object):
+    '''
+    The class is used for caching purposes in the case
+    if feature subset leads to extracting submatrix of
+    discrepancies and subsetting corresponding values
+    without reevaluation.
+    It can be done if `sample_subset` is all the dataset,
+    i.e. data without missing values
+    '''
+    def __init__(self, sample):
+        # train totally -- have to be eliminated if possible, replased by cache
+        n_features, n_samples = sample.n_features, sample.size
+        feature_subset = np.arange(n_features)
+        sample_subset = np.arange(n_samples)
+
+        clf = classifier.Classifier(sample, feature_subset, sample_subset)
+        subC = sample.y[:, np.newaxis]
+        values = clf.classify_one(feature_subset, sample.X)
+
+        self.expecteds = values.mean(axis=0)
+        self.variances = np.square(values - self.expecteds).mean(axis=0)
+        self.discrepancies = np.zeros((n_features, n_features))
+
+        tmp = np.square(values).sum(axis=0)[np.newaxis]
+        self.discrepancies = tmp + tmp.T - 2 * np.dot(values.T, values)
+        self.discrepancies /= n_samples
+
+        eC = np.nanmean(subC)
+        self.varC = np.square(np.nanstd(subC)).mean()
+        self.pearson = np.zeros(n_features)
+
+        e1, e2 = self.expecteds[np.newaxis], eC
+        v1, v2 = self.variances, self.varC
+        self.pearson = np.dot((sample.y - e2)[np.newaxis], values - e1)\
+            / (n_samples * np.sqrt(v1 * v2))
+
+
 class Inspector(object):
 
     DETERMINANT_EPS = 1e-30
@@ -14,15 +51,13 @@ class Inspector(object):
         self.sample = sample
         self.feature_subset = feature_subset
         self.n_features = len(feature_subset)
-        self.feature_mapping = {sub: idx for (idx, sub)
-                                in enumerate(self.feature_subset)}
         self.sample_subset = np.nonzero(
             ~np.isnan(self.sample.X[:, feature_subset]).any(axis=1))
         if type(self.sample_subset) is tuple:
             self.sample_subset = self.sample_subset[0]
         self.n_samples = len(self.sample_subset)
 
-        # train totally -- have to be cached if possible
+        # train totally -- have to be eliminated if possible, replased by cache
         self.clf = classifier.Classifier(sample, self.feature_subset,
                                          self.sample_subset)
         subC = sample.y[self.sample_subset][:, np.newaxis]
@@ -30,9 +65,8 @@ class Inspector(object):
             range(len(self.feature_subset)),
             sample.X[self.sample_subset, :][:, self.feature_subset])
 
-        # get stats
+        # get stats -- should be cached in case of data without missing values
         self.expecteds = values.mean(axis=0)
-        self.errors = np.square(values - subC).mean(axis=0)
         self.variances = np.square(values - self.expecteds).mean(axis=0)
         self.discrepancies = np.zeros((self.n_features, self.n_features))
 
@@ -72,27 +106,6 @@ class Inspector(object):
             self.weights = np.array([1])
             self.functional = self.pearson[0][0]
             return True
-
-    def which_is_dominated_clf(self, clf1, clf2):
-        v1, v2 = clf1.variance, clf2.variance
-        rho = np.square(clf1.classify_training - clf2.classify_training).mean()
-        if (np.square(v1 - v2) - rho * (v1 + v2)) == 0:
-            return None  # TODO: what to do?
-        c1 = (v2 * v2 - v1 * v2 - v2 * rho)\
-            / (np.square(v1 - v2) - rho * (v1 + v2))
-        if c1 < 0:
-            return clf1
-        elif c1 > 1:
-            return clf2
-        return None
-
-    def which_is_dominated_feature(self, feature1, feature2):
-        if self.discrepancies[feature1][feature2] <\
-                np.abs(self.errors[feature1], self.errors[feature2]):
-            return feature1 if self.errors[feature1] >\
-                self.errors[feature2] else feature2
-        else:
-            return None
 
 
 class MaxCorrelationInspector(Inspector):
