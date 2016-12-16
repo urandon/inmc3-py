@@ -20,11 +20,9 @@ class Inspector(object):
             ~np.isnan(self.sample.X[:, feature_subset]).any(axis=1))
         if type(self.sample_subset) is tuple:
             self.sample_subset = self.sample_subset[0]
-        self.sample_mapping = {sub: idx for (idx, sub)
-                               in enumerate(self.sample_subset)}
         self.n_samples = len(self.sample_subset)
 
-        # train totally
+        # train totally -- have to be cached if possible
         self.clf = classifier.Classifier(sample, self.feature_subset,
                                          self.sample_subset)
         subC = sample.y[self.sample_subset][:, np.newaxis]
@@ -45,34 +43,11 @@ class Inspector(object):
         self.eC = np.nanmean(subC)
         self.varC = np.square(np.nanstd(subC)).mean()
         self.pearson = np.zeros(self.n_features)
-        # pearson = [self.pearson(k, values) for in xrange(self.n_features)]
+
         e1, e2 = self.expecteds[np.newaxis], self.eC
         v1, v2 = self.variances, self.varC
         self.pearson = np.dot(
             (self.sample.y[self.sample_subset] - e2)[np.newaxis], values - e1)\
-            / (self.n_samples * np.sqrt(v1 * v2))
-
-    def get_expected_val(self, values):
-        return np.nanmean(values)
-
-    def get_expected_f(self, feature):
-        return self.expecteds[feature]
-
-    def get_w_expected(self, weights):
-        return self.clf.classify(self.sample.X).mean()
-
-    def get_variance_feature(self, feature):
-        return self.variances[feature]
-
-    def get_variance_values(self, values):
-        return np.nanstd(values).mean() ** 2
-
-    def pearson(self, feature, values):
-        # todo: checks
-        e1, e2 = self.get_expected_f(feature), self.eC
-        v1, v2 = self.get_variance_feature(feature), self.varC
-        return np.inner(
-            values[:, feature] - e1, self.sample.y[self.sample_subset] - e2)\
             / (self.n_samples * np.sqrt(v1 * v2))
 
     def check(self):
