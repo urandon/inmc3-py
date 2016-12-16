@@ -30,6 +30,7 @@ class Sample(object):
     def copy(self):
         return Sample(self.X.copy(), self.y.copy())
 
+
 # Loggers
 
 class NullLogger(object):
@@ -75,6 +76,7 @@ class FileLogger(NullLogger):
 
     def __del__(self):
         self.fo.close()
+
 
 # Mappers
 
@@ -138,7 +140,7 @@ class IPyClusterMapperImpl(DummyMapperImpl):
         self.dv.push(kwargs)
 
 
-class Mapper(object): # Mapper Factory and Strategy
+class Mapper(object):
     def __init__(self, parallel_profile=None):
         self._parallel_profile = parallel_profile
         if parallel_profile is None:
