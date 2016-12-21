@@ -39,6 +39,23 @@ class Sample(object):
         return Sample(self.X.copy(), self.y.copy())
 
 
+class DatasetFrequientProblemChecker(object):
+    @classmethod
+    def check_all(cls, sample):
+        failed_results = {
+            checker for checker in [cls.check_duplicates]
+            if not checker(sample)
+        }
+
+        for failed_check in failed_results:
+            print('Check {} failed'.format(failed_check.__name__))
+        return failed_check
+
+    @staticmethod
+    def check_duplicates(sample):
+        return True  # TODO
+
+
 # Loggers
 
 class NullLogger(object):
