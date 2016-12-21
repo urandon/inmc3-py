@@ -1,0 +1,254 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+        <title> Regression Model Based on Best Response Correlated Convex Combinations </title>
+
+        <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/css/reveal.css">
+        <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/css/theme/black.css">
+
+        <!-- Theme used for syntax highlighting of code -->
+        <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/lib/css/zenburn.css">
+
+        <!-- Printing and PDF exports -->
+        <script>
+            var link = document.createElement( 'link' );
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = window.location.search.match( /print-pdf/gi ) ? 'http://lab.hakim.se/reveal-js/css/print/pdf.css' : 'http://lab.hakim.se/reveal-js/css/print/paper.css';
+            document.getElementsByTagName( 'head' )[0].appendChild( link );
+        </script>
+    </head>
+    <body>
+        <!-- Slides are here -->
+        <div class="reveal">
+            <div class="slides">
+                <section>
+                    <h3> Регрессионная модель, основанная на выпуклых комбинациях, максимально коррелирующих с откликом </h3>
+                    <h4> Хомутов Никита </h4> 
+                    <small>
+                        <right>
+                            <p> Научный рукокодитель: </p>
+                            <p> Сенько Олег Валентинович </p>
+                            <p> д.ф.-м.н., ведущий н.с. ВЦ РАН </p>
+                        </right>
+                        <p> ВМК МГУ </p>
+                        <p> Москва, 2016 </p>
+                    </small>
+                </section>
+
+                <!-- Ensembles -->
+                <section>
+                    <h2> Algorithm Ensembles </h2>
+                    <p>The usage of different forecasting/recognition methods and training on different training sets and freature subsets allow us to build some forecasting/recognition algorithms $A_1, \dots, A_r$. </p>
+                    <p class="fragment fade-up"> We can try to increase generalization power by selecting an algorithm with minimal error.
+                    However, the most effective result often can be acheived by using all the algorithms $A_1, \dots, A_r$ </p>
+                    <p class="fragment fade-up"> The usage of an ensemble of algorithms which are based on different models allow us to take advantage of their different extrapolation principles </p>
+                </section>
+
+                <!-- Convex -->
+                <section>
+                    <section>
+                        <h2> Convex combinations </h2>
+                        <p>The usage of an ensemble can be statistically rationalized by analysing convex combination error</p>
+                        <p> Let suppose that algorithms $A_1, \dots, A_r$ forecast the value of variable $Y$ </p>
+                        <p class="fragment fade-up"> Let $f_i$ is a forecast computed by $A_i$. Then
+                        $$ \Delta_i = E_\Omega (Y-f_i)^2 $$
+                        is an expectation of square error for $A_i$ </p>
+                        <p class="fragment fade-up"> Let $\rho_{ij}$ be expectation of square deviation for forecasts of $A_i$ and $A_j$. We'll call it later as <q> "distance" </q>
+                        $$ \rho_{ij} = E_\Omega (f_i - f_j)^2 $$ </p>
+                    </section>
+
+                    <section>
+                        <p> Let $c_1, \dots, c_r$ be positive coefficients that sums to $1$. Denote convex combitaion of forecasts of $A_1, \dots, A_r$ as $\hat{f}$, i.e.
+                        $$ \hat{f} = \sum_{i=1}^{r} c_i f_i \qquad \sum_{i=1}^r c_i = 1 $$ </p>
+                        <p class="fragment fade-up"> It can be shown that the error of a convex combination is
+                        $$ \hat{\Delta} = E_\Omega(Y-\hat{f})^2 = \sum_{i=1}^r c_i \Delta_i - \frac12 \sum_{i=1}^r \sum_{j=1}^r c_i c_j \rho_{ij} $$ </p>
+                    </section>
+
+                    <section>
+                        <p> $$ \hat{\Delta} = E_\Omega(Y-\hat{f})^2 = \sum_{i=1}^r c_i \Delta_i - \frac12 \sum_{i=1}^r \sum_{j=1}^r c_i c_j \rho_{ij} $$ </p>
+                        <p class="fragment fade-up"> Pay attention to $\rho_{ij}$ non-negativity and $c_i$ posivity:
+                        $$ \hat{\Delta} \leq \sum_{i=1}^r c_i \Delta_i $$ </p>
+                        <p class="fragment fade-up"> The expectation of convex combination square error always doesn't exceed corresponding convex combination of individual square errors </p>
+                        <p class="fragment fade-up"> Additionally, the higher distance $\rho_{ij}$ increases the difference in inequality. That's why algorithms based on different principles are effective together </p>
+                    </section>
+                </section>
+
+                <!-- Linreg -->
+                <section>
+                    <section>                    
+                        <h2> Linear Regression </h2>
+                        <p class="fragment fade-up"> Consider conventional problem of multidimensional regressional analysis. The variable $Y$ is predicted on variables $X_1, \dots, X_n$ by linear regression 
+                        $$ \beta_0 + \sum_{i=1}^n \beta_i X_i $$ </p>
+                        <p class="fragment fade-up"> Popular methods solve the problem
+                        $$ \min_{\beta \in \mathbb{R}^{n+1}} \left\{ \sum_{j=1}^n \left( y_j - \beta_0 - \sum_{i=1}^n \beta_i x_{ij} \right)^2 + P(\beta) \right\} $$ 
+                        with regularizing penalty term $P(\beta)$
+                        </p>
+                    </section>
+                    <section>
+                        <table>
+                            <thead>
+                                <tr><th>Method</th> <th>Penalty</th> </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="fragment fade-up">
+                                    <th>Lasso</th> <th>$\sum_{i=1}^n |\beta_i|$</th>
+                                </tr>
+                                <tr class="fragment fade-up">
+                                    <th>Ridge regression</th> <th>$\sum_{i=1}^n \beta_i^2$</th>
+                                </tr>
+                                <tr class="fragment fade-up">
+                                    <th>ElasticNet</th> <th> $(1-\alpha) \sum_{i=1}^n \beta_i^2 + \alpha\sum_{i=1}^n |\beta_i|$</th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+                    <section>
+                        <p> Consider another way to introduce regularization based on restrictions
+                        \begin{eqnarray}
+                            C_1(\beta_0, \dots, \beta_n) \geq 0 \\
+                            \cdots \\
+                            C_k(\beta_0, \dots, \beta_n) \geq 0 \nonumber
+                        \end{eqnarray}
+                        </p>
+                        <p class="fragment fade-up"> Our method regulatization
+                        \begin{eqnarray}
+                        \begin{aligned}
+                            \beta_i K(Y, X_i) \geq 0 &\qquad if \, \rho(Y, X_i) \neq 0 \\
+                            \beta_i = 0 &\qquad else \nonumber                        
+                        \end{aligned}
+                        \end{eqnarray}
+                        The sign of weight coefficient $\beta_i$ of variable $X_i$ is required to be the same as correlation coefficient $K(Y, X_i)$ have
+                        </p>
+                    </section>
+                </section>
+
+                <section>
+                    <section>
+                        <h2> Our method </h2>
+                        <p class="fragment fade-up"> Build 1D linear regressions $R_1, \dots, R_n$. $R_i$ is trained using ordinary least squares on sample $(Y, X_i)$ 
+                        $$ R_i = \beta_0^{ui} + \beta_1^{ui} X_i $$
+                        </p>
+                        <p class="fragment fade-up"> Build convex combination of $R_1, \dots, R_n$ that maximizes correlation to $Y$
+                        $$ \tilde{R}(\mathbf{c}) = \sum_{i=1}^n c_i R_i \qquad K(\tilde{R}(\mathbf{c}), Y) \to \max_{\mathbf{c}} $$ </p>
+                        <p class="fragment fade-up"> Build 1D linear regression
+                        $$ \bar{R} = \beta_0^c + \beta_1^c \tilde{R}(\mathbf{c_{opt}}) $$ </p>
+                        </ul>
+                    </section>
+                    <section>
+                        It can be showh that the desctibed method builds linear regression with weight sign restriction. It should be the same as correlation sign
+                        \begin{eqnarray}
+                        \begin{aligned}
+                            \beta_i K(Y, X_i) \geq 0 &\qquad if \, \rho(Y, X_i) \neq 0 \\
+                            \beta_i = 0 &\qquad else \nonumber
+                        \end{aligned}
+                        \end{eqnarray}
+                        <p class="fragment fade-up"> We found that a method can be used for feature selection </p>
+                    </section>
+                    <section>
+                        <h3> Finding the best combination </h3>
+                        $$ K(\tilde{R}(\mathbf{c}), Y) \to \max_{\mathbf{c}} $$
+                        <p> It was shown that the best combintion is <i> non-extensible </i> and <i> non-compressible </i>, i.e. no feature can be added with correlation growth or no feature can be removed without </p>
+                        <p class="fragment fade-up"> Compressibility test was developed  </p>
+                        <p class="fragment fade-up"> Was developed a method of finding optimal weights in case if weight for all features are non-zero at optimum </p>
+
+                        <p class="fragment fade-up"> Combining these two methods we can find optimal weigths in common case. </p>
+                    </section>
+                    <section>
+                        <p> Starting from valid (with nonzero opimal weights) two-feature combinations we add features and test combination for compressibility. If it compressible, it is thrown away. Else it will be used to build extended combinations </p>
+                        <p> We repeat the procedure increasing the number of features with nonzero weights in combination. Until deadlock will be found </p>
+                        <p> Then be have a list of all deadlocked combinations with nonzero weights. Better correlated to $Y$ is the final optimum </p>
+                    </section>
+                </section>
+
+                <section>
+                    <h2> Experiments </h2>
+                    <p> Senko & Dokukin compared the method to ElasticNet (glmnet) on syntethic problem. Noise-sensivity and ability to drop features that are independent to response were researched. </p>
+                    <p>
+                    <ul>
+                    <li> Result show that convex regression (our method) forecastibility is close to ElasticNet </li>
+                    <li> Convex regression show better noize-insensivity than ElasticNet </li>
+                    <li> Small datasets was better modelled by convex regression than by ElasticNet </li></ul></p>
+                </section>
+
+                <section>
+                    <h2> Метод отбора признаков, основанный на комбинации эластичной сети и расстоянии Кука </h2>
+                    Задача определения точки плавления химических соединений, поиск выпадающих наблюдений.
+                </section>
+
+                <section>
+                    <section>
+                    <h2> Основные результаты </h2>
+                        <ul>
+                            <li> Реализован метод выпуклых комбинаций </li>
+                            <li> Реализован метод отбора признаков, основанный на комбинации эластичной сети и расстоянии Кука. Показана его применимость в задаче определения точки плавления химических соединений </li>
+
+                            <fragment> <li> Готовится публикация посвещенная методу отбора признаков, основанный на комбинации эластичной сети и расстоянии Кука  </li> </fragment>
+                        </ul>
+                    </section>
+                    <section>
+                        <h2> Планируемое </h2>
+                        <ul>
+                            <li> Исследование способности выпуклой регрессии к отбору и перенастройки весов предикторов в случае беггинга и бустинга. В качестве предикторов будут рассматриваться решающие деревья </li>
+                            <li> Исследование возможности использования тупиковых выпуклых комбинаций в целях генерации новых, более высокоуровневых, признаков </li>
+                            <li> Исследование совместимости в методом статистически взвешенных синдромов </li>
+                        </ul>
+                    </section>
+                </section>
+
+
+                <!-- Links -->
+                <section>
+                    <section>
+                        <h2> References </h2>
+                        <ul>
+                            <li>Regression model based on convex combinations best correlated with response 
+                            <small align="right"> Dokukin, A.A. & Senko, O.V. Comput. Math. and Math. Phys. (2015) 55: 526. doi:10.1134/S0965542515030045 </small>
+                            </li>
+                        </ul>                        
+                    </section>
+                    <section>
+                        <p><h2>GitHub</h2></p>
+                        <img src="http://i.imgur.com/7XPpKHS.png" style="background:none; box-shadow:none; image-rendering: pixelated;" width="40%" height="40%">
+                        <p><a href="https://github.com/urandon/inmc3-py" style="color:gainsboro">urandon/inmc3-py</a></p>
+                    </section>
+                </section>
+
+                <section>
+                    <h1> Thank you for your attention </h1>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Imports -->
+        <script src="http://lab.hakim.se/reveal-js/lib/js/head.min.js"></script>
+        <script src="http://lab.hakim.se/reveal-js/js/reveal.js"></script>
+
+        <script>
+            // More info https://github.com/hakimel/reveal.js#configuration
+            Reveal.initialize({
+                history: true,
+
+                    math: {
+                        mathjax: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js',
+                        config: 'TeX-AMS_HTML-full'  // See http://docs.mathjax.org/en/latest/config-files.html
+                    },
+
+                // More info https://github.com/hakimel/reveal.js#dependencies
+                dependencies: [
+                    //{ src: 'http://lab.hakim.se/reveal-js/socket.io/socket.io.js', async: true },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/notes-server/client.js', async: true },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/math/math.js', async: true },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/markdown/marked.js' },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/markdown/markdown.js' },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/notes/notes.js', async: true },
+                    { src: 'http://lab.hakim.se/reveal-js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+                ]
+            });
+        </script>
+    </body>
+</html>
