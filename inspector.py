@@ -28,6 +28,7 @@ class DatasetInspectorStatsHolder(object):
         tmp = np.square(values).sum(axis=0)[np.newaxis]
         self.discrepancies = tmp + tmp.T - 2 * np.dot(values.T, values)
         self.discrepancies /= n_samples
+        np.fill_diagonal(self.discrepancies, 0)  # to prevent float instabillity on diagonals
 
         eC = np.nanmean(subC)
         self.varC = np.square(np.nanstd(subC)).mean()
@@ -199,6 +200,7 @@ class MaxCorrelationInspector(Inspector):
                 return theta / np.sqrt(varC * (theta - Q_2))
 
             theta = (2 * B0) / (1 - B1)
+            # theta = 2* (1 - B0) / B1
 
             functional = 0
             best_theta = None
