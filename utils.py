@@ -43,8 +43,10 @@ class DatasetFrequientProblemChecker(object):
     @classmethod
     def check_all(cls, sample):
         failed_results = {
-            checker for checker in [cls.check_duplicates]
-            if not checker(sample)
+            checker for checker in [
+                cls.check_duplicates,
+                cls.check_zero_variances
+            ] if not checker(sample)
         }
 
         for failed_check in failed_results:
@@ -54,6 +56,14 @@ class DatasetFrequientProblemChecker(object):
     @staticmethod
     def check_duplicates(sample):
         return True  # TODO
+
+    @staticmethod
+    def check_zero_variances(sample):
+        '''
+        check rows that contains just constant
+        it is unusable because do not provide any information
+        '''
+        pass
 
 
 # Loggers
