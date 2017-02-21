@@ -115,10 +115,9 @@ class MaxCorrelationTrainer(object):
             subset = [feature]
             combinations.append(subset)
             tested = self.get_inspector(sample, subset)
-            tested.check()
-
-            functional = tested.functional
-            hist_push(tested)
+            if tested.check():
+                functional = tested.functional
+                hist_push(tested)
 
             if self.enable_selection and functional > self.best_functional:
                 self.best_functional = functional
@@ -135,10 +134,12 @@ class MaxCorrelationTrainer(object):
             self.mapper.push(sample=sample.copy())
 
             for first in xrange(n_features):
+
                 def pair_check(pair):
                     if self.get_inspector(sample, pair).check():
                         return pair[1]
                     return None
+
                 second_check = pmap(pair_check,
                                     it.izip(it.cycle([first]),
                                             xrange(first + 1, n_features)))

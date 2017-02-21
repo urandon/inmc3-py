@@ -1,5 +1,6 @@
 import numpy as np
 from . import classifier
+from . import utils
 
 
 class DatasetInspectorStatsHolder(object):
@@ -43,6 +44,8 @@ class DatasetInspectorStatsHolder(object):
 class Inspector(object):
 
     DETERMINANT_EPS = 1e-30
+    CONDITION_NUMBER_THRESHOLD = 1e+5
+    VARIANCE_THRESHOLD = 1e-7
 
     def __init__(self, sample, feature_subset):
         if sample.cachable:
@@ -60,6 +63,10 @@ class Inspector(object):
             self.feature_subset = feature_subset
         else:
             self._init_noncached(sample, feature_subset)
+
+        self.is_valid = None
+        if (self.variances < self.VARIANCE_THRESHOLD).any():
+            self.is_valid = False
 
     def _init_noncached(self, sample, feature_subset):
         self.pearson = [None]
@@ -102,10 +109,17 @@ class Inspector(object):
             / (self.n_samples * np.sqrt(v1 * v2))
 
     def check(self):
+        if self.is_valid is False:
+            # print '{} is invalid due to precomputed statements'.format(self.feature_subset)
+            return False
         if self.n_features > 1:
             try:
-                if np.abs(np.linalg.det(self.discrepancies))\
-                        < self.DETERMINANT_EPS:
+                # if np.abs(np.linalg.det(self.discrepancies))\
+                #        < self.DETERMINANT_EPS:
+                #    return False
+                cond = np.abs(np.linalg.cond(self.discrepancies))
+                if cond > self.CONDITION_NUMBER_THRESHOLD:
+                    # utils.logger.push('{} is invalid due to condition number {}'.format(self.feature_subset, cond))
                     return False
                 revrsd = np.linalg.inv(self.discrepancies)
             except np.linalg.LinAlgError:
@@ -115,10 +129,10 @@ class Inspector(object):
                 return False
 
             check_ = self.subset_weights(revrsd)
-            if check_ is None:
-                return False
-            self.weights, self.functional = check_
-            return True
+            self.is_valid = check_ is not None
+            if self.is_valid:
+                self.weights, self.functional = check_
+            return self.is_valid
         else:
             self.weights = np.array([1])
             self.functional = self.pearson[0][0]
