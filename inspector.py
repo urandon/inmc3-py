@@ -110,7 +110,7 @@ class Inspector(object):
 
     def check(self):
         if self.is_valid is False:
-            # print '{} is invalid due to precomputed statements'.format(self.feature_subset)
+            utils.logger.push('{} is invalid due to precomputed statements'.format(self.feature_subset))
             return False
         if self.n_features > 1:
             try:
@@ -119,7 +119,7 @@ class Inspector(object):
                 #    return False
                 cond = np.abs(np.linalg.cond(self.discrepancies))
                 if cond > self.CONDITION_NUMBER_THRESHOLD:
-                    # utils.logger.push('{} is invalid due to condition number {}'.format(self.feature_subset, cond))
+                    utils.logger.push('{} is invalid due to condition number {}'.format(self.feature_subset, cond))
                     return False
                 revrsd = np.linalg.inv(self.discrepancies)
             except np.linalg.LinAlgError:

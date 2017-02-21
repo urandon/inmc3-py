@@ -43,8 +43,8 @@ class TreeStorage(object):
         self.set_data(node, data)
         return node
 
-    def append(self, combo):
-        self.add_node(combo)
+    def append(self, combo, data=None):
+        self.add_node(combo, data=data)
 
     def __setitem__(self, key, value):
         self.add_node(key, data=value)
@@ -79,15 +79,16 @@ class TreeStorage(object):
                 for ret in self.iteritems(combo + [idx], node):
                     yield ret
 
-    def join(self, storage, filter=lambda x: True):
-        is_storage_handled = storage.data_handled
-        storage.data_handled = self.data_handled
-        if self.data_handled:
+    def join(self, storage, filterfunc=lambda x: True):
+        if storage.data_handled and self.data_handled:
             for (combo, data) in storage:
-                if filter((combo, data)):
+                if filterfunc((combo, data)):
                     self.add_node(combo, data=data)
+        elif storage.data_handled:
+            for (combo, data) in storage:
+                if filterfunc((combo, data)):
+                    self.add_node(combo)
         else:
             for combo in storage:
-                if filter(combo):
+                if filterfunc(combo):
                     self.add_node(combo)
-        storage.data_handled = is_storage_handled

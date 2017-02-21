@@ -113,6 +113,9 @@ class FileLogger(NullLogger):
         self.fo.close()
 
 
+logger = PrintLogger()
+
+
 # Mappers
 
 class DummyMapperImpl(object):
@@ -159,8 +162,7 @@ class IPyClusterMapperImpl(DummyMapperImpl):
         self.dv['sys.path'] = sys.path
         with self.dv.sync_imports():
             from . import trainer, inspector, classifier, storage
-        logger.push('Running parallel on cluster with {} nodes'.
-                    format(len(self.dv)))
+        logger.push('Running parallel on cluster with {} nodes'.format(len(self.dv)))
 
     def map(self, *args, **kwargs):
         return self.dv.map_sync(*args, **kwargs)
@@ -197,6 +199,3 @@ class Mapper(object):
 
     def push(self, *args, **kwargs):
         self._impl.push(*args, **kwargs)
-
-
-logger = PrintLogger()

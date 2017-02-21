@@ -7,33 +7,23 @@ from . import storage
 from . import utils
 
 
-class ITrainer(object):
-    def train(sample, voting_quality_threshold, comparision_threshold,
-              filtering_type, combining_type, skip_selection,
-              logger=None):
-        pass
-
-    def forecast(train_sample, test_sample, logger=None):
-        pass
-
-    def get_gescription(voting_quality_threshold):
-        pass
-
-
 class MaxCorrelationTrainer(object):
 
     initial_single_functional = -np.inf
     best_functional_msg_template = 'Best {} ({}): {: .3f}'
     epsilon = 1e-4
 
-    def __init__(self, voting_quality_threshold=1e-3,
+    def __init__(self,
+                 selection_threshold=(1 - .5 * 1e-2),
+                 generation_threshold=(1 - 1e-2),
                  comparision_threshold=(1 - 1e2),
                  filtering_type='domination',
                  combining_type='mnk',
                  skip_selection=False, logger=utils.PrintLogger(),
                  parallel_profile=None,
                  iterable_map=True):
-        self.voting_quality_threshold = voting_quality_threshold
+        self.selection_threshold = selection_threshold
+        self.generation_threshold = generation_threshold
         self.comparision_threshold = comparision_threshold
         self.filtering_type = filtering_type
         self.combining_type = combining_type
@@ -157,16 +147,17 @@ class MaxCorrelationTrainer(object):
                 tested = self.get_inspector(sample, combo)
                 if not tested.check():
                     return None
-                if not tested.functional >\
-                        best_prev_func * self.comparision_threshold:
+                if not tested.functional * self.selection_threshold > best_prev_func:
                     return None
+                # if not tested.functional > best_prev_func * self.comparision_threshold:
+                #    return None
                 return utils.Struct(feature_subset=tested.feature_subset,
                                     functional=tested.functional,
                                     weights=tested.weights)
 
             for iter_idx in xrange(1, n_features):
                 best_prev_func = self.best_functional
-                new_combinations = storage.TreeStorage(data_handled=False)
+                new_combinations = storage.TreeStorage(data_handled=True)
                 if force_garbage_collector:
                     self.mapper.gc_collect()
 
@@ -176,15 +167,18 @@ class MaxCorrelationTrainer(object):
                     if tested is None:
                         continue
                     hist_push(tested)
-                    new_combinations.append(combo)
+                    new_combinations.append(combo, data=tested.functional)
                     if tested.functional > self.best_functional:
                         self.best_functional = tested.functional
                         best_combination = combo
                         best_weights = tested.weights
                 if len(new_combinations) <= 1:
                     break
+
                 del combinations
-                combinations = new_combinations
+                combinations = storage.TreeStorage(data_handled=False)
+                combinations.join(new_combinations, lambda (comb, f): f > self.best_functional * self.generation_threshold)
+
                 log_func(iter_idx + 1, self.best_functional)
                 logger.push('\tcombinations to process: {}'.
                             format(len(combinations)))
