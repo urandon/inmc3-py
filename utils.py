@@ -11,7 +11,7 @@ def gc_collect():
     gc.collect()
 
 
-def top_combos(combos, k=40):
+def top_combos_k(combos, k=40):
     return sorted(combos, key=lambda c__f_w: c__f_w[1][0])[-k:]
 
 
@@ -43,6 +43,12 @@ class Sample(object):
 
     def copy(self):
         return Sample(self.X.copy(), self.y.copy())
+
+    @staticmethod
+    def from_pandas(df, target_col):
+        features = df.drop([target_col], axis=1).values
+        target = df[target_col].values
+        return Sample(features, target)
 
 
 class DatasetFrequientProblemChecker(object):
