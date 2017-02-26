@@ -20,9 +20,8 @@ class MaxCorrelationTrainer(object):
     epsilon = 1e-4
 
     def __init__(self,
-                 selection_threshold=(1 - .5 * 1e-2),
-                 generation_threshold=(1 - 1e-2),
-                 comparision_threshold=(1 - 1e2),
+                 selection_threshold=(1 - 1e-2),
+                 generation_threshold=(1 - .5 * 1e-2),
                  filtering_type='domination',
                  combining_type='mnk',
                  skip_selection=False, logger=utils.logger,
@@ -30,7 +29,6 @@ class MaxCorrelationTrainer(object):
                  iterable_map=True):
         self.selection_threshold = selection_threshold
         self.generation_threshold = generation_threshold
-        self.comparision_threshold = comparision_threshold
         self.filtering_type = filtering_type
         self.combining_type = combining_type
         self.enable_selection = not skip_selection
@@ -120,80 +118,91 @@ class MaxCorrelationTrainer(object):
                 best_combination = subset
                 best_weights = tested.weights
 
+        log_func(1, self.best_functional, single=True)
+        self.best_functional = self.initial_combinations_functional(
+            self.best_functional)
+
+        pmap = self.mapper.imap if self.iterable_map\
+            else self.mapper.map
+        self.mapper.push(sample=sample.copy())
+
+        for first in range(n_features):
+
+            def pair_check(pair):
+                if self.get_inspector(sample, pair).check():
+                    return pair[1]
+                return None
+
+            second_check = pmap(pair_check, izip(cycle([first]), range(first + 1, n_features)))
+            pairs[first] = list(filter(None, second_check))
+        logger.push('pairs found = {}'.format(
+            sum((len(pair) for pair in pairs))))
+
+        def combo_pair_iter(combos):
+            for combo in combos:
+                last = combo[-1]
+                for second in pairs[last]:
+                    yield combo + [second]
+
+        def test_check(combo):
+            tested = self.get_inspector(sample, combo)
+            if not tested.check():
+                return None
+            if not tested.functional * self.generation_threshold > best_prev_func:
+                return None
+            return utils.Struct(feature_subset=tested.feature_subset,
+                                functional=tested.functional,
+                                weights=tested.weights)
+
+        for iter_idx in range(1, n_features):
+            best_prev_func = self.best_functional
+            new_combinations = storage.TreeStorage(data_handled=False)
+            if force_garbage_collector:
+                self.mapper.gc_collect()
+
+            testeds = pmap(test_check, combo_pair_iter(combinations))
+            for (combo, tested) in izip(combo_pair_iter(combinations),
+                                           testeds):
+                if tested is None:
+                    continue
+                hist_push(tested)
+                new_combinations.append(combo)
+                if tested.functional > self.best_functional:
+                    self.best_functional = tested.functional
+                    best_combination = combo
+                    best_weights = tested.weights
+            if len(new_combinations) <= 1:
+                break
+
+            del combinations
+            combinations = new_combinations
+
+            log_func(iter_idx + 1, self.best_functional)
+            logger.push('\tcombinations to process: {}'.
+                        format(len(combinations)))
+
         if self.enable_selection:
-            log_func(1, self.best_functional, single=True)
-            self.best_functional = self.initial_combinations_functional(
-                self.best_functional)
+            top_combinations = utils.top_combos_thresh(
+                self.noncollapsed_combinations,
+                self.best_functional * self.selection_threshold
+            )
+        else:
+            top_combinations = self.noncollapsed_combinations
 
-            pmap = self.mapper.imap if self.iterable_map\
-                else self.mapper.map
-            self.mapper.push(sample=sample.copy())
+        # training results
+        log_func('_', self.best_functional)
+        logger.push(
+            'Best combination: {c}\n'
+            'Weights: {w}\n'
+            '#Selected combinations {nsc}\n'
+            '#Total combinations: {nnc}\n'.format(
+                c='; '.join(map(str, best_combination)),
+                w='; '.join(map(str, best_weights)),
+                nsc=len(top_combinations),
+                nnc=len(self.noncollapsed_combinations)
+            )).flush()
 
-            for first in range(n_features):
-
-                def pair_check(pair):
-                    if self.get_inspector(sample, pair).check():
-                        return pair[1]
-                    return None
-
-                second_check = pmap(pair_check, izip(cycle([first]), range(first + 1, n_features)))
-                pairs[first] = list(filter(None, second_check))
-            logger.push('pairs found = {}'.format(
-                sum((len(pair) for pair in pairs))))
-
-            def combo_pair_iter(combos):
-                for combo in combos:
-                    last = combo[-1]
-                    for second in pairs[last]:
-                        yield combo + [second]
-
-            def test_check(combo):
-                tested = self.get_inspector(sample, combo)
-                if not tested.check():
-                    return None
-                if not tested.functional * self.selection_threshold > best_prev_func:
-                    return None
-                # if not tested.functional > best_prev_func * self.comparision_threshold:
-                #    return None
-                return utils.Struct(feature_subset=tested.feature_subset,
-                                    functional=tested.functional,
-                                    weights=tested.weights)
-
-            for iter_idx in range(1, n_features):
-                best_prev_func = self.best_functional
-                new_combinations = storage.TreeStorage(data_handled=False)
-                if force_garbage_collector:
-                    self.mapper.gc_collect()
-
-                testeds = pmap(test_check, combo_pair_iter(combinations))
-                for (combo, tested) in izip(combo_pair_iter(combinations),
-                                               testeds):
-                    if tested is None:
-                        continue
-                    hist_push(tested)
-                    new_combinations.append(combo)
-                    if tested.functional > self.best_functional:
-                        self.best_functional = tested.functional
-                        best_combination = combo
-                        best_weights = tested.weights
-                if len(new_combinations) <= 1:
-                    break
-
-                del combinations
-                combinations = new_combinations
-
-                log_func(iter_idx + 1, self.best_functional)
-                logger.push('\tcombinations to process: {}'.
-                            format(len(combinations)))
-
-            # training results
-            log_func('_', self.best_functional)
-            logger.push(
-                'Best combination: ' + '; '.join(map(str, best_combination)) +
-                '\nWeights: ' + '; '.join(map(str, best_weights))
-            ).flush()
-
-        return self.noncollapsed_combinations
+        return top_combinations
 
     '''
     DEPRECATED
