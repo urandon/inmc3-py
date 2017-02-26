@@ -4,6 +4,7 @@ Different useful functions, classes, methods are there
 
 import itertools
 import numpy as np
+from .storage import TreeStorage
 
 
 def gc_collect():
@@ -16,9 +17,9 @@ def top_combos_k(combos, k=40):
 
 
 def top_combos_thresh(storage, f_threshold=0.0):
-    top_storage = storage.TreeStorage(data_handled=True)
-    top_storage.join(storage, lambda c__f_w: c__f_w[1][0] > f_threshold)
-    return top_combos
+    top_storage = TreeStorage(data_handled=True)
+    top_storage.update( (combo, (func, weight)) for (combo, (func, weight)) in storage if func > f_threshold )
+    return top_storage
 
 
 class Struct:
