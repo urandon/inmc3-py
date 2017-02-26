@@ -157,7 +157,7 @@ class MaxCorrelationTrainer(object):
 
             for iter_idx in xrange(1, n_features):
                 best_prev_func = self.best_functional
-                new_combinations = storage.TreeStorage(data_handled=True)
+                new_combinations = storage.TreeStorage(data_handled=False)
                 if force_garbage_collector:
                     self.mapper.gc_collect()
 
@@ -167,7 +167,7 @@ class MaxCorrelationTrainer(object):
                     if tested is None:
                         continue
                     hist_push(tested)
-                    new_combinations.append(combo, data=tested.functional)
+                    new_combinations.append(combo)
                     if tested.functional > self.best_functional:
                         self.best_functional = tested.functional
                         best_combination = combo
@@ -176,8 +176,7 @@ class MaxCorrelationTrainer(object):
                     break
 
                 del combinations
-                combinations = storage.TreeStorage(data_handled=False)
-                combinations.join(new_combinations, lambda (comb, f): f > self.best_functional * self.generation_threshold)
+                combinations = new_combinations
 
                 log_func(iter_idx + 1, self.best_functional)
                 logger.push('\tcombinations to process: {}'.

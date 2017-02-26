@@ -15,6 +15,12 @@ def top_combos(combos, k=40):
     return sorted(combos, key=lambda (c, (f, w)): f)[-k:]
 
 
+def top_combos_thresh(storage, f_threshold=0.0):
+    top_storage = storage.TreeStorage(data_handled=True)
+    top_storage.join(storage, lambda (comb, (f, w)): f > f_threshold)
+    return top_combos
+
+
 class Struct:
     def __init__(self, **entries):
         self.__dict__.update(entries)
