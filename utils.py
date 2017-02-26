@@ -12,12 +12,12 @@ def gc_collect():
 
 
 def top_combos(combos, k=40):
-    return sorted(combos, key=lambda (c, (f, w)): f)[-k:]
+    return sorted(combos, key=lambda c__f_w: c__f_w[1][0])[-k:]
 
 
 def top_combos_thresh(storage, f_threshold=0.0):
     top_storage = storage.TreeStorage(data_handled=True)
-    top_storage.join(storage, lambda (comb, (f, w)): f > f_threshold)
+    top_storage.join(storage, lambda c__f_w: c__f_w[1][0] > f_threshold)
     return top_combos
 
 
@@ -126,13 +126,14 @@ logger = PrintLogger()
 
 class DummyMapperImpl(object):
     def __init__(self, parallel_profile=None):
-        pass
+        # python 2/3 compatibility
+        self.imapper = getattr(itertools, 'imap', map)
 
     def map(self, *args, **kwargs):
         return map(*args, **kwargs)
 
     def imap(self, *args, **kwargs):
-        return itertools.imap(*args, **kwargs)
+        return self.imapper(*args, **kwargs)
 
     def gc_collect(self):
         gc_collect()

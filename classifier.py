@@ -97,8 +97,7 @@ class ComplexClassifier(object):
             raise ValueError('feature subset must be specified')
         self.feature_subset = feature_subset
         self.n_samples, self.n_features = 0, 0
-        self.alpha, self.beta, self.variance =\
-            (np.double(0) for x in xrange(3))
+        self.alpha, self.beta, self.variance = (np.double(0) for x in range(3))
         self.error = np.inf
 
         if classifier is not None:

@@ -1,6 +1,12 @@
 import numpy as np
 import itertools as it
 
+from itertools import cycle
+try:
+    from itertools import izip
+except ImportError: # python3 compatibility
+    izip = zip
+
 from . import classifier
 from . import inspector
 from . import storage
@@ -85,7 +91,7 @@ class MaxCorrelationTrainer(object):
         logger, log_func = self.logger, self.log_func
         n_objects, n_features = sample.X.shape
         self.n_features = n_features
-        pairs = [[] for x in xrange(n_features)]
+        pairs = [[] for x in range(n_features)]
 
         best_combination = None
         best_weights = None
@@ -123,17 +129,15 @@ class MaxCorrelationTrainer(object):
                 else self.mapper.map
             self.mapper.push(sample=sample.copy())
 
-            for first in xrange(n_features):
+            for first in range(n_features):
 
                 def pair_check(pair):
                     if self.get_inspector(sample, pair).check():
                         return pair[1]
                     return None
 
-                second_check = pmap(pair_check,
-                                    it.izip(it.cycle([first]),
-                                            xrange(first + 1, n_features)))
-                pairs[first] = filter(None, second_check)
+                second_check = pmap(pair_check, izip(cycle([first]), range(first + 1, n_features)))
+                pairs[first] = list(filter(None, second_check))
             logger.push('pairs found = {}'.format(
                 sum((len(pair) for pair in pairs))))
 
@@ -155,14 +159,14 @@ class MaxCorrelationTrainer(object):
                                     functional=tested.functional,
                                     weights=tested.weights)
 
-            for iter_idx in xrange(1, n_features):
+            for iter_idx in range(1, n_features):
                 best_prev_func = self.best_functional
                 new_combinations = storage.TreeStorage(data_handled=False)
                 if force_garbage_collector:
                     self.mapper.gc_collect()
 
                 testeds = pmap(test_check, combo_pair_iter(combinations))
-                for (combo, tested) in it.izip(combo_pair_iter(combinations),
+                for (combo, tested) in izip(combo_pair_iter(combinations),
                                                testeds):
                     if tested is None:
                         continue

@@ -60,7 +60,7 @@ class TreeStorage(object):
             root = self.root
         if combo is None:
             combo = []
-        for idx, node in root.iteritems():
+        for idx, node in root.items():
             if idx == self.data_key:
                 yield combo
             else:
@@ -72,7 +72,7 @@ class TreeStorage(object):
             root = self.root
         if combo is None:
             combo = []
-        for idx, node in root.iteritems():
+        for idx, node in root.items():
             if idx == self.data_key:
                 yield (combo, node)
             else:

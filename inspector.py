@@ -146,13 +146,13 @@ class MaxCorrelationInspector(Inspector):
 
     def __init__(self, sample, feature_subset):
         super(MaxCorrelationInspector, self).__init__(sample, feature_subset)
-        self.alpha, self.beta, self.gamma = [np.double() for x in xrange(3)]
+        self.alpha, self.beta, self.gamma = [np.double() for x in range(3)]
         self.cs = np.double()
-        self.B0, self.B1, self.B2 = [None for x in xrange(3)]
+        self.B0, self.B1, self.B2 = [None for x in range(3)]
         self.subset = feature_subset
 
     def subset_weights(self, reversed_):
-        weights = [np.double() for x in xrange(self.n_features)]
+        weights = [np.double() for x in range(self.n_features)]
         functional = None
         varC = self.varC
         discrepancies = self.discrepancies
