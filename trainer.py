@@ -25,7 +25,7 @@ class MaxCorrelationTrainer(object):
                  comparision_threshold=(1 - 1e2),
                  filtering_type='domination',
                  combining_type='mnk',
-                 skip_selection=False, logger=utils.PrintLogger(),
+                 skip_selection=False, logger=utils.logger,
                  parallel_profile=None,
                  iterable_map=True):
         self.selection_threshold = selection_threshold
@@ -195,6 +195,9 @@ class MaxCorrelationTrainer(object):
 
         return self.noncollapsed_combinations
 
+    '''
+    DEPRECATED
+    '''
     def forecast(self, train_sample, test_sample, all_results=True):
         # logger = self.logger
         if self.dominating_combinations is None or\
