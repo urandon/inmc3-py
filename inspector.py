@@ -110,22 +110,14 @@ class Inspector(object):
 
     def check(self):
         if self.is_valid is False:
-            utils.logger.push('{} is invalid due to precomputed statements'.format(self.feature_subset))
             return False
         if self.n_features > 1:
             try:
-                # if np.abs(np.linalg.det(self.discrepancies))\
-                #        < self.DETERMINANT_EPS:
-                #    return False
                 cond = np.abs(np.linalg.cond(self.discrepancies))
                 if cond > self.CONDITION_NUMBER_THRESHOLD:
-                    utils.logger.push('{} is invalid due to condition number {}'.format(self.feature_subset, cond))
                     return False
                 revrsd = np.linalg.inv(self.discrepancies)
             except np.linalg.LinAlgError:
-                # print np.linalg.LinAlgError.__name__, ' got:',\
-                #      '\nfeature_subset:', self.feature_subset,\
-                #      '\ndiscrepancies:\n', self.discrepancies
                 return False
 
             check_ = self.subset_weights(revrsd)
@@ -170,12 +162,7 @@ class MaxCorrelationInspector(Inspector):
             weights = [c1, 1 - c1]
             functional = (c1 * (v1 - v2) + v2) /\
                 np.sqrt((c1 * (v1 - v2) + v2 - c1 * (1 - c1) * rho) * varC)
-            # theta = -2*v1*v2*rho / ((v1-v2)**2 - rho * (v1+v2))
-            # functional = (theta/sqrt(varC)) /\
-            #   np.sqrt(theta + rho * (theta-v2) * (theta-v1) / (v1-v2) ** 2)
         else:
-            # phi = lambda idx: beta * PSI[i] - gamma * PHI[i]
-            # psi = lambda idx: beta * PHI[i] - alpha * PSI[i]
             PSI = np.sum(reversed_, axis=1)  # refers to PSI in article
             PHI = reversed_.dot(variances)   # refers to PHI in article
 
