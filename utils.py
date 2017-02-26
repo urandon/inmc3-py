@@ -22,6 +22,14 @@ def top_combos_thresh(storage, f_threshold=0.0):
     return top_storage
 
 
+def to_dataframe(storage):
+    import pandas as pd
+    return pd.DataFrame(
+        data=[(func, combo, weights) for (combo, (func, weights)) in storage],
+        columns=['correlation', 'combo', 'weights']
+    )
+
+
 class Struct:
     def __init__(self, **entries):
         self.__dict__.update(entries)
@@ -47,9 +55,12 @@ class Sample(object):
 
     @staticmethod
     def from_pandas(df, target_col):
-        features = df.drop([target_col], axis=1).values
-        target = df[target_col].values
-        return Sample(features, target)
+        features = df.drop([target_col], axis=1)
+        target = df[target_col]
+        sample = Sample(features.values, target.values)
+        sample.feature_names = features.columns
+        sample.target_name = target_col
+        return sample
 
 
 class DatasetFrequientProblemChecker(object):
