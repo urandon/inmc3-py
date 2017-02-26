@@ -79,6 +79,16 @@ class TreeStorage(object):
                 for ret in self.iteritems(combo + [idx], node):
                     yield ret
 
+    def update(self, iterable_data):
+       if iterable_data is not None:
+            if self.data_handled:
+                for combo, data in iterable_data:
+                   self.append(combo, data=data)
+            else:
+                for combo in iterable_data:
+                   self.append(combo)
+
+
     def join(self, storage, filterfunc=lambda x: True):
         if storage.data_handled and self.data_handled:
             for (combo, data) in storage:
