@@ -37,13 +37,18 @@ class DatasetInspectorStatsHolder(object):
 
         e1, e2 = self.expecteds[np.newaxis], eC
         v1, v2 = self.variances, self.varC
+        
+        self.pearson = np.zeros(v1.shape)
+        mask = v1<1e-7
+        v1[mask] = 1.0
         self.pearson = np.dot((sample.y - e2)[np.newaxis], values - e1)\
             / (n_samples * np.sqrt(v1 * v2))
+        self.pearson[:, mask] = 0.0
 
 
 class Inspector(object):
 
-    DETERMINANT_EPS = 1e-30
+    DETERMINANT_EPS = 1e-15
     CONDITION_NUMBER_THRESHOLD = 1e+5
     VARIANCE_THRESHOLD = 1e-7
 
@@ -113,6 +118,9 @@ class Inspector(object):
             return False
         if self.n_features > 1:
             try:
+                det = np.linalg.det(self.discrepancies)
+                if np.abs(det) < self.DETERMINANT_EPS:
+                    return False
                 cond = np.abs(np.linalg.cond(self.discrepancies))
                 if cond > self.CONDITION_NUMBER_THRESHOLD:
                     return False

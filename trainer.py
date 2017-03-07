@@ -24,7 +24,7 @@ class MaxCorrelationTrainer(object):
                  generation_threshold=(1 - .5 * 1e-2),
                  filtering_type='domination',
                  combining_type='mnk',
-                 skip_selection=False, logger=utils.logger,
+                 skip_selection=False, logger=None,
                  parallel_profile=None,
                  iterable_map=True):
         self.selection_threshold = selection_threshold
@@ -32,7 +32,7 @@ class MaxCorrelationTrainer(object):
         self.filtering_type = filtering_type
         self.combining_type = combining_type
         self.enable_selection = not skip_selection
-        self.logger = logger
+        self.logger = logger or utils.logger
 
         self.n_features = None
         self.noncollapsed_combinations = storage.TreeStorage(data_handled=True)
