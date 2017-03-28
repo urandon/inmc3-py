@@ -22,6 +22,29 @@ def top_combos_thresh(storage, f_threshold=0.0):
     return top_storage
 
 
+def decorrelated_order(sample, combos):
+    ncc = list(combos)
+    fg = inmc3.trainer.FeatureGenerator()
+    new_X = fg.from_combinations(sample, sample, ncc)
+    new_sample = inmc3.utils.Sample(new_X, sample.y)
+    new_sample.stats = inmc3.inspector.DatasetInspectorStatsHolder(new_sample)    
+    rho = new_sample.stats.pearson
+    delta = new_sample.stats.discrepancies
+    
+    n_features = delta.shape[0]
+    mask_selected = zeros(rho.shape, dtype=np.bool)
+    distance = zeros(rho.shape)
+    
+    order = []
+    while len(order) < n_features:
+        best = np.where(mask_selected, -np.inf, rho-distance).argmax()
+        distance += delta[best]
+        mask_selected[0,best] = True
+        order.append(best)
+    
+    return [ncc[elem] for elem in order]
+
+
 def to_dataframe(storage):
     import pandas as pd
     return pd.DataFrame(
