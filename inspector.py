@@ -208,6 +208,8 @@ class MaxCorrelationInspector(Inspector):
                 Q_2 = B0 + B1 * theta + B2 * theta * theta
                 return theta / np.sqrt(varC * (theta - Q_2))
 
+            if np.abs(1 - B1) < np.finfo(np.double).eps:
+                return None
             theta = (2 * B0) / (1 - B1)
             # theta = 2* (1 - B0) / B1
 
